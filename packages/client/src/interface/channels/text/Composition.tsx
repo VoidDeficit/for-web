@@ -142,7 +142,8 @@ export function MessageComposition(props: Props) {
 
   const maxMessageLength = () => {
     const cl = client();
-    return cl.configured() ? (cl.getLimits()?.message_length ?? 2000) : 2000;
+    if (!cl.configured()) return 2000;
+    return cl.getLimits()?.message_length ?? 2000;
   };
 
   const isAlmostTooLong = () => messageLength() > maxMessageLength() - 200;
