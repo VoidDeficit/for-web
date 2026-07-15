@@ -8,9 +8,11 @@ import { styled } from "styled-system/jsx";
 
 import { ChannelContextMenu, UserContextMenu } from "@revolt/app";
 import { useClient } from "@revolt/client";
+import { useDevice } from "@revolt/common";
+import Instance from "@revolt/instance/Instance";
 import { TextWithEmoji } from "@revolt/markdown";
 import { useModals } from "@revolt/modal";
-import { useLocation, useNavigate } from "@revolt/routing";
+import { useNavigate } from "@revolt/routing";
 import {
   Avatar,
   Deferred,
@@ -25,7 +27,6 @@ import { Symbol } from "@revolt/ui/components/utils/Symbol";
 
 import MdClose from "@material-design-icons/svg/outlined/close.svg?component-solid";
 
-import { useDevice } from "@revolt/common";
 import { SidebarBase } from "./common";
 
 interface Props {
@@ -54,7 +55,6 @@ export const HomeSidebar = (props: Props) => {
   const { t } = useLingui();
   const client = useClient();
   const navigate = useNavigate();
-  const location = useLocation();
   const { openModal } = useModals();
   const { isMobile } = useDevice();
 
@@ -79,9 +79,7 @@ export const HomeSidebar = (props: Props) => {
             href="/app"
             size="normal"
             icon={<Symbol>home</Symbol>}
-            attention={
-              location.pathname.endsWith("/app") ? "selected" : "normal"
-            }
+            attention={Instance.relPath() === "/app" ? "selected" : "normal"}
           >
             <ButtonTitle>
               <Trans>Home</Trans>
@@ -95,7 +93,7 @@ export const HomeSidebar = (props: Props) => {
             size="normal"
             icon={<Symbol>group</Symbol>}
             attention={
-              location.pathname.endsWith("/friends") ? "selected" : "normal"
+              Instance.relPath() === "/friends" ? "selected" : "normal"
             }
           >
             <ButtonTitle>

@@ -59,8 +59,7 @@ export function InstanceContext(props: { children?: JSXElement }) {
     setInst(undefined);
 
     //Redirect default instance
-    if (host === DefaultHost)
-      return nav(Instance.relPath(location.pathname), { replace: true });
+    if (host === DefaultHost) return nav(Instance.relPath(), { replace: true });
 
     try {
       const appCfg: AppConfig = host

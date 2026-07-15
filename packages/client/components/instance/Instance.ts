@@ -1,4 +1,4 @@
-import { Navigator } from "@solidjs/router";
+import { Navigator, useLocation } from "@solidjs/router";
 import { Accessor, createMemo } from "solid-js";
 
 import { CONFIGURATION } from "@revolt/common";
@@ -64,14 +64,15 @@ export default class Instance {
   href = (path: string, pathOnly?: boolean, base?: string) =>
     (pathOnly ? "" : StoatOrigin) + (base ? `/i/${base}` : this.#base) + path;
 
-  /** Convert an instance-specific path back to relative form */
-  static relPath = (path: string) => path.replace(R_RelPath, "");
+  /** Convert path to relative form, stripping instance prefix (if any)
+   * @param path Defaults to `location.pathname`
+   */
+  static relPath = (path?: string) =>
+    (path ?? useLocation().pathname).replace(R_RelPath, "");
 
   /** Switch to a new instance and redirect the client */
-  switchTo(host: string) {
-    const rel = Instance.relPath(location.pathname);
-    this.#nav(this.href(rel, true, host));
-  }
+  switchTo = (host: string) =>
+    this.#nav(this.href(Instance.relPath(), true, host));
 
   /** Create a new Stoat.js client, disposing the old one */
   newClient() {
