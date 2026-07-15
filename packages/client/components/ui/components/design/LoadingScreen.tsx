@@ -2,6 +2,7 @@ import { Trans, useLingui } from "@lingui-solid/solid/macro";
 import { JSX, Show, createSignal, onCleanup, onMount } from "solid-js";
 import { styled } from "styled-system/jsx";
 
+import { useInstance } from "@revolt/instance";
 import { Button, CircularProgress, Symbol, Text } from "@revolt/ui";
 
 /**
@@ -45,18 +46,6 @@ type StatusResponse = {
 };
 
 /**
- * Whether the current origin is eligible to probe the status API
- */
-const isEligibleOrigin = () => {
-  const { hostname } = window.location;
-  return (
-    hostname === "localhost" || // (for testing)
-    hostname.endsWith(".stoat.chat") ||
-    hostname === "stoat.chat"
-  );
-};
-
-/**
  * Loading screen shown while the client connects for the first time.
  *
  * If the connection does not succeed within {@link STATUS_PROBE_DELAY}, and we
@@ -68,6 +57,7 @@ const isEligibleOrigin = () => {
  * We also link to the support page there.
  */
 export function LoadingScreen() {
+  const instance = useInstance();
   const { t } = useLingui();
 
   const [notice, setNotice] = createSignal<
@@ -96,12 +86,12 @@ export function LoadingScreen() {
   };
 
   onMount(() => {
-    if (!isEligibleOrigin()) return;
-
     const controller = new AbortController();
 
     // Check the status API for an ongoing incident.
     const statusTimer = setTimeout(async () => {
+      //TODO Fetch status from current instance backend instead of only stoat.chat
+      if (!instance.isStoat) return;
       try {
         const res = await fetch(STATUS_API_URL, { signal: controller.signal });
         const data = (await res.json()) as StatusResponse;

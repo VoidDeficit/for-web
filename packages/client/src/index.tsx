@@ -124,18 +124,16 @@ function MountContext(props: { children?: JSX.Element }) {
       <KeybindContext>
         <ModalContext>
           <ClientContext>
-            <I18nProvider>
-              <SoundContext>
-                <VoiceContext>
-                  <QueryClientProvider client={client}>
-                    {props.children}
-                    <ModalRenderer />
-                    <FloatingManager />
-                    <AndroidNag />
-                  </QueryClientProvider>
-                </VoiceContext>
-              </SoundContext>
-            </I18nProvider>
+            <SoundContext>
+              <VoiceContext>
+                <QueryClientProvider client={client}>
+                  {props.children}
+                  <ModalRenderer />
+                  <FloatingManager />
+                  <AndroidNag />
+                </QueryClientProvider>
+              </VoiceContext>
+            </SoundContext>
             <SyncWorker />
           </ClientContext>
         </ModalContext>
@@ -184,17 +182,19 @@ const snackbarCtrl = new SnackbarController();
 render(
   () => (
     <DeviceContext>
-      <SnackbarProvider controller={snackbarCtrl}>
-        <Router>
-          {/* <Route path="/i/:host" component={InstanceContext}>
+      <I18nProvider>
+        <SnackbarProvider controller={snackbarCtrl}>
+          <Router>
+            {/* <Route path="/i/:host" component={InstanceContext}>
             {routes()}
           </Route> */}
-          <Route path="/" component={InstanceContext}>
-            {routes()}
-          </Route>
-        </Router>
-        {/* <ReportBug /> */}
-      </SnackbarProvider>
+            <Route path="/" component={InstanceContext}>
+              {routes()}
+            </Route>
+          </Router>
+          {/* <ReportBug /> */}
+        </SnackbarProvider>
+      </I18nProvider>
     </DeviceContext>
   ),
   document.getElementById("root") as HTMLElement,

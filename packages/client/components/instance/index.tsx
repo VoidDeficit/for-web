@@ -1,3 +1,4 @@
+import { useLingui } from "@lingui-solid/solid/macro";
 import { useBeforeLeave, useNavigate, useParams } from "@solidjs/router";
 import {
   createContext,
@@ -11,7 +12,7 @@ import { Dynamic } from "solid-js/web";
 
 import { CONFIGURATION } from "@revolt/common";
 import { AppConfig, STOAT_HOST } from "@revolt/common/lib/env";
-import { CircularProgress, useSnackbar } from "@revolt/ui";
+import { LoadingScreen, useSnackbar } from "@revolt/ui";
 
 import Instance, { _newClient } from "./Instance";
 
@@ -26,6 +27,8 @@ export function InstanceContext(props: { children?: JSXElement }) {
   const params = useParams();
   const snackbar = useSnackbar();
   const nav = useNavigate();
+  const { t } = useLingui();
+
   const [inst, setInst] = createSignal<Instance>();
 
   //Check Stoat instance
@@ -44,10 +47,10 @@ export function InstanceContext(props: { children?: JSXElement }) {
   function onError(e: unknown) {
     console.error(e);
     if ((e as Error).message === "Failed to fetch") {
-      e = `Couldn't fetch Stoat configuration from '${host}'.`;
+      e = t`Couldn't fetch Stoat configuration from '${host}'.`;
     }
     snackbar.show({
-      message: "Oops, something went wrong! " + e,
+      message: t`Oops, something went wrong! ${e}`,
       placement: "bottom",
       closeable: true,
       autoCloseDelay: 30000,
@@ -82,7 +85,7 @@ export function InstanceContext(props: { children?: JSXElement }) {
   })();
 
   return (
-    <Show when={inst()} fallback={<CircularProgress />}>
+    <Show when={inst()} fallback={<LoadingScreen />}>
       <Dynamic component={instanceContext.Provider} value={inst()}>
         <Redirect />
         {props.children}
@@ -118,11 +121,4 @@ function Redirect() {
   return <></>;
 }
 
-export function useInstance() {
-  const instance = useContext(instanceContext);
-
-  if (!instance)
-    throw new Error("useInstance must be called inside InstanceProvider");
-
-  return instance;
-}
+export const useInstance = () => useContext(instanceContext)!;
