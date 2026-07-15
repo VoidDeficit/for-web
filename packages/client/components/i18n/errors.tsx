@@ -40,12 +40,6 @@ export function useError() {
     ) {
       const err = error as
         | API.Error
-        | Exclude<
-            API.Authifier_Error,
-            | { type: "UnknownUser" }
-            | { type: "DatabaseError" }
-            | { type: "InternalError" }
-          >;
 
       switch (err.type) {
         case "AlreadyFriends":
@@ -213,12 +207,6 @@ export function TranslatedError(props: TranslatedErrorProps) {
     ) {
       const err = clean as
         | API.Error
-        | Exclude<
-            API.Authifier_Error,
-            | { type: "UnknownUser" }
-            | { type: "DatabaseError" }
-            | { type: "InternalError" }
-          >;
 
       return err;
     }
@@ -232,7 +220,7 @@ export function TranslatedError(props: TranslatedErrorProps) {
         <Switch fallback={err(props.error)}>
           <Match
             when={
-              (errorString() as API.Error | API.Authifier_Error).type ===
+              (errorString() as API.Error ).type ===
               "BlockedByShield"
             }
           >
