@@ -47,7 +47,8 @@ export function InstanceContext(props: { children?: JSXElement }) {
   function onError(e: unknown) {
     console.error(e);
     if ((e as Error).message === "Failed to fetch") {
-      e = t`Couldn't fetch Stoat configuration from '${host}'.`;
+      const hStr = `'${host}'`;
+      e = t`Couldn't fetch Stoat configuration from ${hStr}.`;
     }
     snackbar.show({
       message: t`Oops, something went wrong! ${e}`,
