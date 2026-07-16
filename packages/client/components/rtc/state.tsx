@@ -19,6 +19,7 @@ import {
   Track,
   VideoResolution,
 } from "livekit-client";
+import type { TrackPublishOptions } from "livekit-client";
 import { DenoiseTrackProcessor } from "livekit-rnnoise-processor";
 import { Channel } from "stoat.js";
 
@@ -442,16 +443,62 @@ class Voice {
       }
 
       try {
+        const initialQuality =
+          this.getEnabledScreenShareQualities()[
+            this.#settings.screenShareQuality || "low"
+          ];
+
+        const publishOptions: Partial<TrackPublishOptions> = {
+          // Prefer VP8 explicitly rather than relying on implicit SDK/server
+          // defaults - VP8 is software-encoded on all browsers but sustains
+          // frame rate far better than software H264 (OpenH264) under load.
+          videoCodec: "vp8",
+          // A single full-resolution layer is sufficient for screenshare and
+          // avoids the encoder splitting effort across simulcast layers.
+          simulcast: false,
+          screenShareEncoding: {
+            maxBitrate: 5_000_000,
+            maxFramerate: initialQuality?.resolution.frameRate || 30,
+          },
+        };
+
         const localTrack = await room.localParticipant.setScreenShareEnabled(
           true,
           {
-            resolution:
-              this.getEnabledScreenShareQualities()[
-                this.#settings.screenShareQuality || "low"
-              ]?.resolution,
+            resolution: initialQuality?.resolution,
+            contentHint: initialQuality?.contentHint as
+              | "motion"
+              | "detail"
+              | "text"
+              | undefined,
             audio: true,
           },
+          publishOptions,
         );
+
+        // Explicitly tighten the frame rate beyond what LiveKit's typed
+        // capture options allow (a bare ideal number, no floor). Firefox in
+        // particular will silently throttle screen capture toward ~1fps for
+        // sources it classifies as static/low-motion unless a min frame rate
+        // and contentHint are both set before the track is handed off.
+        if (
+          localTrack?.videoTrack &&
+          initialQuality?.resolution.frameRate
+        ) {
+          try {
+            await localTrack.videoTrack.mediaStreamTrack.applyConstraints({
+              frameRate: {
+                min: Math.min(24, initialQuality.resolution.frameRate),
+                ideal: initialQuality.resolution.frameRate,
+                max: initialQuality.resolution.frameRate,
+              },
+            });
+          } catch (e) {
+            // Some capture sources (e.g. certain Wayland/PipeWire portals)
+            // reject a min frameRate constraint; fall back silently since
+            // contentHint alone still helps in that case.
+          }
+        }
 
         const screenAudioTrack = room.localParticipant.getTrackPublication(
           Track.Source.ScreenShareAudio,
@@ -481,7 +528,13 @@ class Voice {
 
             if (localTrack.videoTrack) {
               await localTrack.videoTrack.mediaStreamTrack.applyConstraints({
-                frameRate: { max: quality.resolution.frameRate },
+                frameRate: quality.resolution.frameRate
+                  ? {
+                      min: Math.min(24, quality.resolution.frameRate),
+                      ideal: quality.resolution.frameRate,
+                      max: quality.resolution.frameRate,
+                    }
+                  : undefined,
                 width:
                   quality.resolution.width === 0
                     ? undefined
