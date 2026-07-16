@@ -17,6 +17,7 @@ import {
   Room,
   ScreenSharePresets,
   Track,
+  VideoEncoding,
   VideoResolution,
 } from "livekit-client";
 import type { TrackPublishOptions } from "livekit-client";
@@ -48,6 +49,7 @@ type ScreenShareQuality = {
   resolution: VideoResolution;
   fullName: string;
   contentHint: string;
+  encoding?: VideoEncoding;
 };
 
 class Voice {
@@ -368,6 +370,20 @@ class Voice {
             fullName: `1080p 30FPS`,
             contentHint: "motion",
           };
+          qualities.high60 = {
+            name: "high60",
+            resolution: {
+              width: 1920,
+              height: 1080,
+              frameRate: 60,
+            },
+            fullName: `1080p 60FPS`,
+            contentHint: "motion",
+            encoding: {
+              maxBitrate: 8_000_000,
+              maxFramerate: 60,
+            },
+          };
           const originalResolution = ScreenSharePresets.original.resolution;
           originalResolution.frameRate = 5;
           originalResolution.aspectRatio = 0;
@@ -456,7 +472,7 @@ class Voice {
           // A single full-resolution layer is sufficient for screenshare and
           // avoids the encoder splitting effort across simulcast layers.
           simulcast: false,
-          screenShareEncoding: {
+          screenShareEncoding: initialQuality?.encoding ?? {
             maxBitrate: 5_000_000,
             maxFramerate: initialQuality?.resolution.frameRate || 30,
           },
@@ -472,6 +488,13 @@ class Voice {
               | "text"
               | undefined,
             audio: true,
+            // Hints Chromium (including on Linux via its PipeWire portal) to
+            // offer a "share system audio" option in the picker. Firefox
+            // ignores this; Linux system/tab audio capture support otherwise
+            // varies by browser and desktop portal and can't be forced from
+            // here - if no audio track comes back, the UI falls back to
+            // showing "Audio disabled by browser".
+            systemAudio: "include",
           },
           publishOptions,
         );

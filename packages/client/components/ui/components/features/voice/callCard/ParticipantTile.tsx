@@ -12,7 +12,7 @@ import { Track } from "livekit-client";
 import { cva } from "styled-system/css";
 import { styled } from "styled-system/jsx";
 
-import { UserContextMenu } from "@revolt/app";
+import { StreamStatsMenu, UserContextMenu } from "@revolt/app";
 import { useUser } from "@revolt/markdown/users";
 import { useVoice } from "@revolt/rtc";
 import { useState } from "@revolt/state";
@@ -102,12 +102,17 @@ export function ParticipantTile(props: TileProps) {
           //     member: user().member,
           //   },
           contextMenu: () => (
-            <UserContextMenu
-              user={user().user!}
-              member={user().member}
-              inVoice={!isScreenShare()}
-              isScreenshare={isScreenShare()}
-            />
+            <>
+              <Show when={isScreenShare()}>
+                <StreamStatsMenu track={track} />
+              </Show>
+              <UserContextMenu
+                user={user().user!}
+                member={user().member}
+                inVoice={!isScreenShare()}
+                isScreenshare={isScreenShare()}
+              />
+            </>
           ),
         }}
         style={{ ...getHeight() }}
