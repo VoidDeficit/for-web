@@ -13,6 +13,7 @@ import {
   useTracks,
 } from "solid-livekit-components";
 
+import type { TrackPublishOptions } from "livekit-client";
 import {
   Room,
   ScreenSharePresets,
@@ -20,7 +21,6 @@ import {
   VideoEncoding,
   VideoResolution,
 } from "livekit-client";
-import type { TrackPublishOptions } from "livekit-client";
 import { DenoiseTrackProcessor } from "livekit-rnnoise-processor";
 import { Channel } from "stoat.js";
 
@@ -504,10 +504,7 @@ class Voice {
         // particular will silently throttle screen capture toward ~1fps for
         // sources it classifies as static/low-motion unless a min frame rate
         // and contentHint are both set before the track is handed off.
-        if (
-          localTrack?.videoTrack &&
-          initialQuality?.resolution.frameRate
-        ) {
+        if (localTrack?.videoTrack && initialQuality?.resolution.frameRate) {
           try {
             await localTrack.videoTrack.mediaStreamTrack.applyConstraints({
               frameRate: {
@@ -516,7 +513,7 @@ class Voice {
                 max: initialQuality.resolution.frameRate,
               },
             });
-          } catch (e) {
+          } catch {
             // Some capture sources (e.g. certain Wayland/PipeWire portals)
             // reject a min frameRate constraint; fall back silently since
             // contentHint alone still helps in that case.

@@ -1,5 +1,5 @@
 import { Trans } from "@lingui-solid/solid/macro";
-import { createSignal, onCleanup, Show } from "solid-js";
+import { createEffect, createSignal, onCleanup, Show } from "solid-js";
 import {
   isTrackReference,
   TrackReferenceOrPlaceholder,
@@ -11,6 +11,12 @@ import { styled } from "styled-system/jsx";
 import { Text } from "@revolt/ui";
 
 import { ContextMenu, ContextMenuDivider } from "./ContextMenu";
+
+const MenuLabel = styled("div", {
+  base: {
+    padding: "var(--gap-xs) var(--gap-lg)",
+  },
+});
 
 const StatRow = styled("div", {
   base: {
@@ -150,21 +156,21 @@ export function StreamStatsMenu(props: { track: TrackReferenceOrPlaceholder }) {
     return t as LocalVideoTrack | RemoteVideoTrack;
   };
 
-  const track = videoTrack();
-  if (track) {
+  createEffect(() => {
+    const track = videoTrack();
+    if (!track) return;
     const stop = pollTrackStats(track, setStats);
     onCleanup(stop);
-  }
+  });
 
   return (
-    <Show when={track}>
+    <Show when={videoTrack()}>
       <ContextMenu class="StreamStatsMenu">
-        <Text
-          class="label"
-          style={{ padding: "var(--gap-xs) var(--gap-lg)" }}
-        >
-          <Trans>Stream Info</Trans>
-        </Text>
+        <MenuLabel>
+          <Text class="label">
+            <Trans>Stream Info</Trans>
+          </Text>
+        </MenuLabel>
         <ContextMenuDivider />
         <Show when={stats().resolution}>
           <StatRow>
