@@ -476,6 +476,12 @@ class Voice {
             maxBitrate: 5_000_000,
             maxFramerate: initialQuality?.resolution.frameRate || 30,
           },
+          // Under CPU/bandwidth pressure, let LiveKit's own congestion
+          // control step bitrate/resolution down first rather than frame
+          // rate - dropping fps is exactly the throttling behaviour this
+          // fix was written to avoid, so heavy content (fast-scrolling
+          // builds, dense IDE redraws) should get blockier, not choppier.
+          degradationPreference: "maintain-framerate",
         };
 
         const localTrack = await room.localParticipant.setScreenShareEnabled(
