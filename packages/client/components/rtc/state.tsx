@@ -369,6 +369,17 @@ class Voice {
             resolution: ScreenSharePresets.h1080fps30.resolution,
             fullName: `1080p 30FPS`,
             contentHint: "motion",
+            // LiveKit's default 1080p30 preset targets 5Mbps, which is
+            // tuned for typical desktop/document sharing. Fast-motion
+            // content (games, video) needs substantially more bitrate to
+            // hold detail without the encoder being forced to trade away
+            // quality - and under degradationPreference:
+            // "maintain-framerate" a too-low ceiling shows up as blocky/
+            // blurry motion rather than dropped frames, so raise it here.
+            encoding: {
+              maxBitrate: 8_000_000,
+              maxFramerate: 30,
+            },
           };
           qualities.high60 = {
             name: "high60",
