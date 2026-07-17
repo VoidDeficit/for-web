@@ -497,10 +497,17 @@ class Voice {
         const quality = this.getCurrentScreenShareQuality();
 
         const publishOptions: Partial<TrackPublishOptions> = {
-          // Prefer VP8 explicitly rather than relying on implicit SDK/server
-          // defaults - VP8 is software-encoded on all browsers but sustains
-          // frame rate far better than software H264 (OpenH264) under load.
-          videoCodec: "vp8",
+          // Don't force a codec - let the browser negotiate its preferred
+          // one. Forcing VP8 previously seemed like the right call (avoids
+          // software OpenH264, which is what Firefox falls back to), but
+          // it also prevents the browser from ever picking a
+          // hardware-accelerated H264/AV1 encoder when one is available,
+          // which is a much bigger win for CPU-heavy content like games -
+          // software VP8 competing with a game for CPU is exactly what
+          // caused fps drops under motion even after raising the bitrate
+          // ceiling. contentHint + the frame rate floor below already
+          // address the original 1fps throttling bug without needing to
+          // force a specific codec.
           // A single full-resolution layer is sufficient for screenshare and
           // avoids the encoder splitting effort across simulcast layers.
           simulcast: false,
