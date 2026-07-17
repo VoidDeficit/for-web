@@ -4,6 +4,7 @@ import { Show } from "solid-js";
 import { useLingui } from "@lingui-solid/solid/macro";
 import { styled } from "styled-system/jsx";
 
+import { DeviceContextMenu } from "@revolt/app";
 import { CONFIGURATION } from "@revolt/common";
 import { useVoice } from "@revolt/rtc";
 import { useState } from "@revolt/state";
@@ -51,6 +52,7 @@ export function VoiceCallCardActions(props: { size: "xs" | "sm" }) {
                 : t`Unmute`
               : t`Missing permission`,
           },
+          contextMenu: () => <DeviceContextMenu kind="audioinput" />,
         }}
         isDisabled={!voice.speakingPermission}
       >
@@ -71,6 +73,7 @@ export function VoiceCallCardActions(props: { size: "xs" | "sm" }) {
                 : t`Deafen`
               : t`Missing permission`,
           },
+          contextMenu: () => <DeviceContextMenu kind="audiooutput" />,
         }}
         isDisabled={!voice.listenPermission}
       >
