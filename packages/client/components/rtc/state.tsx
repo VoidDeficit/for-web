@@ -14,13 +14,7 @@ import {
 } from "solid-livekit-components";
 
 import type { TrackPublishOptions } from "livekit-client";
-import {
-  Room,
-  ScreenSharePresets,
-  Track,
-  VideoEncoding,
-  VideoResolution,
-} from "livekit-client";
+import { Room, Track, VideoEncoding, VideoResolution } from "livekit-client";
 import { DenoiseTrackProcessor } from "livekit-rnnoise-processor";
 import { Channel } from "stoat.js";
 
@@ -29,7 +23,8 @@ import { CONFIGURATION } from "@revolt/common";
 import { ModalController, useModals } from "@revolt/modal";
 import { useState } from "@revolt/state";
 import {
-  ScreenShareQualityName,
+  ScreenShareFrameRate,
+  ScreenShareResolution,
   Voice as VoiceSettings,
 } from "@revolt/state/stores/Voice";
 import { VoiceCallCardContext } from "@revolt/ui/components/features/voice/callCard/VoiceCallCard";
@@ -45,11 +40,36 @@ type State =
   | "RECONNECTING";
 
 type ScreenShareQuality = {
-  name: ScreenShareQualityName;
   resolution: VideoResolution;
-  fullName: string;
   contentHint: string;
-  encoding?: VideoEncoding;
+  encoding: VideoEncoding;
+};
+
+const SCREEN_SHARE_DIMENSIONS: Record<
+  ScreenShareResolution,
+  { width: number; height: number }
+> = {
+  "480p": { width: 854, height: 480 },
+  "720p": { width: 1280, height: 720 },
+  "1080p": { width: 1920, height: 1080 },
+  "1440p": { width: 2560, height: 1440 },
+};
+
+// Max bitrate (bps) ceilings for WebRTC's built-in congestion control to
+// work within, not fixed targets - the actual bitrate used adapts
+// dynamically based on real network/CPU conditions (see
+// degradationPreference below). Screenshare content varies wildly in how
+// hard it is to encode (a static desktop vs. fast-motion gameplay), so
+// these lean generous, especially at higher frame rates where every pixel
+// changing every frame needs much more bitrate to hold detail.
+const SCREEN_SHARE_MAX_BITRATE: Record<
+  ScreenShareResolution,
+  Record<ScreenShareFrameRate, number>
+> = {
+  "480p": { 15: 1_000_000, 30: 1_500_000, 60: 2_000_000 },
+  "720p": { 15: 1_500_000, 30: 3_000_000, 60: 4_500_000 },
+  "1080p": { 15: 3_000_000, 30: 8_000_000, 60: 10_000_000 },
+  "1440p": { 15: 5_000_000, 30: 12_000_000, 60: 16_000_000 },
 };
 
 class Voice {
@@ -329,103 +349,97 @@ class Voice {
   }
 
   /**
-   * Get the enabled screen share qualities. "low" will always be enabled.
-   * Each screen share quality is checked against the limit if the limit is available on the client.
-   *
-   * TODO: Translate the fullNames here, I can't figure out how to do it.
-   *
-   * @param name The name of the screen share quality to get
-   * @returns A partial record of ScreenShareQualityName to ScreenShareQuality. Will always contain "low" quality.
+   * Get the screen share resolutions enabled by the server's configured
+   * video_resolution limit. 480p and 720p are always enabled; 1080p/1440p
+   * require the server to allow at least that resolution.
    */
-  getEnabledScreenShareQualities(): Partial<
-    Record<ScreenShareQualityName, ScreenShareQuality>
-  > {
-    // Always enable low
-    const qualities: Partial<
-      Record<ScreenShareQualityName, ScreenShareQuality>
-    > = {
-      low: {
-        name: "low",
-        resolution: ScreenSharePresets.h720fps30.resolution,
-        fullName: `720p 30FPS`,
-        contentHint: "motion",
-      },
-    };
+  getEnabledScreenShareResolutions(): ScreenShareResolution[] {
+    const enabled: ScreenShareResolution[] = ["480p", "720p"];
 
-    if (this.getClient().configured()) {
-      // TODO: Use new user limits if the user is new - I don't think there's a way to do that now?
-      const limit =
-        this.getClient().configuration?.features.limits.default
-          .video_resolution;
+    const limit = this.getClient().configured()
+      ? this.getClient().configuration?.features.limits.default.video_resolution
+      : undefined;
 
-      // TODO: Add more resolutions to stream from if they're enabled. May tie into premium users in the future?
-      if (limit) {
-        if (
-          (limit[0] === 0 || limit[0] >= 1920) &&
-          (limit[1] === 0 || limit[1] >= 1080)
-        ) {
-          qualities.high = {
-            name: "high",
-            resolution: ScreenSharePresets.h1080fps30.resolution,
-            fullName: `1080p 30FPS`,
-            contentHint: "motion",
-            // LiveKit's default 1080p30 preset targets 5Mbps, which is
-            // tuned for typical desktop/document sharing. Fast-motion
-            // content (games, video) needs substantially more bitrate to
-            // hold detail without the encoder being forced to trade away
-            // quality - and under degradationPreference:
-            // "maintain-framerate" a too-low ceiling shows up as blocky/
-            // blurry motion rather than dropped frames, so raise it here.
-            encoding: {
-              maxBitrate: 8_000_000,
-              maxFramerate: 30,
-            },
-          };
-          qualities.high60 = {
-            name: "high60",
-            resolution: {
-              width: 1920,
-              height: 1080,
-              frameRate: 60,
-            },
-            fullName: `1080p 60FPS`,
-            contentHint: "motion",
-            encoding: {
-              maxBitrate: 8_000_000,
-              maxFramerate: 60,
-            },
-          };
-          const originalResolution = ScreenSharePresets.original.resolution;
-          originalResolution.frameRate = 5;
-          originalResolution.aspectRatio = 0;
-          if (this.getClient().configured()) {
-            // TODO: Use new user limits if the user is new - I don't think there's a way to do that now?
-            const limit =
-              this.getClient().configuration?.features.limits.default
-                .video_resolution;
-            if (limit) {
-              originalResolution.width = limit[0];
-              originalResolution.height = limit[1];
-              // If both resolutions are limited, set aspect ratio
-              if (
-                originalResolution.height !== 0 &&
-                originalResolution.width !== 0
-              ) {
-                originalResolution.aspectRatio =
-                  originalResolution.width / originalResolution.height;
-              }
-            }
-          }
-          qualities.text = {
-            name: "text",
-            resolution: originalResolution,
-            fullName: `Source 5FPS`,
-            contentHint: "text",
-          };
-        }
+    if (!limit || (limit[0] === 0 && limit[1] === 0)) {
+      // No limit configured (or explicitly unlimited) - allow everything.
+      return [...enabled, "1080p", "1440p"];
+    }
+
+    for (const res of ["1080p", "1440p"] as const) {
+      const { width, height } = SCREEN_SHARE_DIMENSIONS[res];
+      if (
+        (limit[0] === 0 || limit[0] >= width) &&
+        (limit[1] === 0 || limit[1] >= height)
+      ) {
+        enabled.push(res);
       }
     }
-    return qualities;
+
+    return enabled;
+  }
+
+  /**
+   * Build the capture/publish quality for a given resolution + frame rate,
+   * clamped to whatever the server's video_resolution limit allows.
+   */
+  getScreenShareQuality(
+    resolution: ScreenShareResolution,
+    frameRate: ScreenShareFrameRate,
+  ): ScreenShareQuality {
+    const enabledResolutions = this.getEnabledScreenShareResolutions();
+    if (!enabledResolutions.includes(resolution)) {
+      resolution = enabledResolutions.at(-1) ?? "720p";
+    }
+
+    const { width, height } = SCREEN_SHARE_DIMENSIONS[resolution];
+
+    return {
+      resolution: { width, height, frameRate },
+      contentHint: "motion",
+      encoding: {
+        maxBitrate: SCREEN_SHARE_MAX_BITRATE[resolution][frameRate],
+        maxFramerate: frameRate,
+      },
+    };
+  }
+
+  /**
+   * Build the capture/publish quality for text/document sharing: native
+   * source resolution (clamped to the server limit) at a low, fixed frame
+   * rate, optimised for text clarity rather than motion.
+   */
+  getScreenShareTextQuality(): ScreenShareQuality {
+    const resolution: VideoResolution = { width: 0, height: 0, frameRate: 5 };
+
+    const limit = this.getClient().configured()
+      ? this.getClient().configuration?.features.limits.default.video_resolution
+      : undefined;
+    if (limit) {
+      resolution.width = limit[0];
+      resolution.height = limit[1];
+      if (resolution.width !== 0 && resolution.height !== 0) {
+        resolution.aspectRatio = resolution.width / resolution.height;
+      }
+    }
+
+    return {
+      resolution,
+      contentHint: "text",
+      encoding: { maxBitrate: 2_500_000, maxFramerate: 5 },
+    };
+  }
+
+  /**
+   * Get the screen share quality that should currently be used, based on
+   * the user's saved settings (resolution/frame rate, or text mode).
+   */
+  getCurrentScreenShareQuality(): ScreenShareQuality {
+    return this.#settings.screenShareTextMode
+      ? this.getScreenShareTextQuality()
+      : this.getScreenShareQuality(
+          this.#settings.screenShareResolution,
+          this.#settings.screenShareFrameRate,
+        );
   }
 
   async toggleScreenshare() {
@@ -439,41 +453,37 @@ class Voice {
 
       this.sound.playSound("streamEnd");
     } else {
-      const qualities = this.getEnabledScreenShareQualities();
-      let screenPickerQualityName: ScreenShareQualityName | undefined;
-      let screenPickerAudio: boolean | undefined;
+      let screenPickerIdx: number | undefined;
+      let screenPickerAudio = this.#settings.screenShareAudio;
 
-      // Register the modal on screen picker handler if it exists
+      // Register the modal on screen picker handler if it exists. This is
+      // the desktop app's own source (monitor/window) picker - quality is
+      // always taken from saved settings now, not chosen per-share.
       if (window.native && window.native.onceScreenPicker) {
-        window.native.onceScreenPicker((sources) => {
-          this.openModal({
-            type: "screen_share_picker",
-            onCancel: () => {
-              window.native.screenPickerCallback(-1, false);
-            },
-            callback: (
-              idx: number,
-              qualityName: ScreenShareQualityName,
-              audio: boolean,
-            ) => {
-              window.native.screenPickerCallback(idx, audio);
-              screenPickerQualityName = qualityName;
-              screenPickerAudio = audio;
-            },
-            sources: sources,
-            qualities: Object.keys(qualities).map((k) => {
-              const v = qualities[k as ScreenShareQualityName]!;
-              return { name: k, fullName: v.fullName };
-            }),
+        await new Promise<void>((resolve) => {
+          window.native.onceScreenPicker((sources) => {
+            this.openModal({
+              type: "screen_share_picker",
+              onCancel: () => {
+                window.native.screenPickerCallback(-1, false);
+                resolve();
+              },
+              callback: (idx: number, audio: boolean) => {
+                window.native.screenPickerCallback(idx, audio);
+                screenPickerIdx = idx;
+                screenPickerAudio = audio;
+                resolve();
+              },
+              sources: sources,
+            });
           });
         });
+
+        if (screenPickerIdx === undefined) return;
       }
 
       try {
-        const initialQuality =
-          this.getEnabledScreenShareQualities()[
-            this.#settings.screenShareQuality || "low"
-          ];
+        const quality = this.getCurrentScreenShareQuality();
 
         const publishOptions: Partial<TrackPublishOptions> = {
           // Prefer VP8 explicitly rather than relying on implicit SDK/server
@@ -483,10 +493,7 @@ class Voice {
           // A single full-resolution layer is sufficient for screenshare and
           // avoids the encoder splitting effort across simulcast layers.
           simulcast: false,
-          screenShareEncoding: initialQuality?.encoding ?? {
-            maxBitrate: 5_000_000,
-            maxFramerate: initialQuality?.resolution.frameRate || 30,
-          },
+          screenShareEncoding: quality.encoding,
           // Under CPU/bandwidth pressure, let LiveKit's own congestion
           // control step bitrate/resolution down first rather than frame
           // rate - dropping fps is exactly the throttling behaviour this
@@ -498,13 +505,9 @@ class Voice {
         const localTrack = await room.localParticipant.setScreenShareEnabled(
           true,
           {
-            resolution: initialQuality?.resolution,
-            contentHint: initialQuality?.contentHint as
-              | "motion"
-              | "detail"
-              | "text"
-              | undefined,
-            audio: true,
+            resolution: quality.resolution,
+            contentHint: quality.contentHint as "motion" | "detail" | "text",
+            audio: screenPickerAudio,
             // Hints Chromium (including on Linux via its PipeWire portal) to
             // offer a "share system audio" option in the picker. Firefox
             // ignores this; Linux system/tab audio capture support otherwise
@@ -521,13 +524,13 @@ class Voice {
         // particular will silently throttle screen capture toward ~1fps for
         // sources it classifies as static/low-motion unless a min frame rate
         // and contentHint are both set before the track is handed off.
-        if (localTrack?.videoTrack && initialQuality?.resolution.frameRate) {
+        if (localTrack?.videoTrack && quality.resolution.frameRate) {
           try {
             await localTrack.videoTrack.mediaStreamTrack.applyConstraints({
               frameRate: {
-                min: Math.min(24, initialQuality.resolution.frameRate),
-                ideal: initialQuality.resolution.frameRate,
-                max: initialQuality.resolution.frameRate,
+                min: Math.min(24, quality.resolution.frameRate),
+                ideal: quality.resolution.frameRate,
+                max: quality.resolution.frameRate,
               },
             });
           } catch {
@@ -536,10 +539,6 @@ class Voice {
             // contentHint alone still helps in that case.
           }
         }
-
-        const screenAudioTrack = room.localParticipant.getTrackPublication(
-          Track.Source.ScreenShareAudio,
-        );
 
         this.#setScreenshare(room.localParticipant.isScreenShareEnabled);
 
@@ -557,84 +556,96 @@ class Voice {
             }
           });
 
-          const callback = async (
-            qualityName: ScreenShareQualityName,
-            audio: boolean,
-          ) => {
-            const quality = qualities[qualityName] || qualities.low!;
-
-            if (localTrack.videoTrack) {
-              await localTrack.videoTrack.mediaStreamTrack.applyConstraints({
-                frameRate: quality.resolution.frameRate
-                  ? {
-                      min: Math.min(24, quality.resolution.frameRate),
-                      ideal: quality.resolution.frameRate,
-                      max: quality.resolution.frameRate,
-                    }
-                  : undefined,
-                width:
-                  quality.resolution.width === 0
-                    ? undefined
-                    : { max: quality.resolution.width },
-                height:
-                  quality.resolution.width === 0
-                    ? undefined
-                    : { max: quality.resolution.height },
-              });
-              localTrack.videoTrack.mediaStreamTrack.contentHint =
-                quality.contentHint;
-              if (!audio && screenAudioTrack?.track) {
-                room.localParticipant.unpublishTrack(screenAudioTrack.track);
-              }
-              this.sound.playSound("streamStart");
-            }
-          };
-
-          if (screenPickerQualityName) {
-            callback(
-              screenPickerQualityName || "low",
-              screenPickerAudio || false,
-            );
-          } else if (this.#settings.screenShareQualityAsk) {
-            if (Object.keys(qualities).length > 1) {
-              localTrack.pauseUpstream();
-              screenAudioTrack?.pauseUpstream();
-              this.openModal({
-                onCancel: async () => {
-                  await room.localParticipant.setScreenShareEnabled(false);
-                  this.#setScreenshare(
-                    room.localParticipant.isScreenShareEnabled,
-                  );
-                },
-                type: "screen_share_settings",
-                trackReference: {
-                  participant: room.localParticipant,
-                  publication: localTrack,
-                  source: Track.Source.ScreenShare,
-                },
-                qualities: Object.keys(qualities).map((k) => {
-                  const v = qualities[k as ScreenShareQualityName]!;
-                  return { name: k, fullName: v.fullName };
-                }),
-                audio: !!screenAudioTrack,
-                callback: async (qualityName, audio) => {
-                  callback(qualityName, audio);
-                  localTrack.resumeUpstream();
-                  if (audio) {
-                    screenAudioTrack?.resumeUpstream();
-                  }
-                },
-              });
-            } else {
-              callback(
-                this.#settings.screenShareQuality || "low",
-                this.#settings.screenShareAudio,
-              );
-            }
-          }
+          this.sound.playSound("streamStart");
         }
       } catch (e) {
         this.onErr(e);
+      }
+    }
+  }
+
+  /**
+   * Change the resolution/frame rate of an active screen share live,
+   * without stopping and restarting it. Persists the choice so future
+   * shares start at this quality.
+   */
+  async setScreenShareQuality(
+    resolution: ScreenShareResolution,
+    frameRate: ScreenShareFrameRate,
+  ) {
+    this.#settings.screenShareResolution = resolution;
+    this.#settings.screenShareFrameRate = frameRate;
+    this.#settings.screenShareTextMode = false;
+    await this.applyCurrentScreenShareQuality();
+  }
+
+  /**
+   * Toggle text-optimised screen share mode (native resolution, capped
+   * frame rate) live, without stopping and restarting the share.
+   */
+  async setScreenShareTextMode(enabled: boolean) {
+    this.#settings.screenShareTextMode = enabled;
+    await this.applyCurrentScreenShareQuality();
+  }
+
+  /**
+   * Re-apply the current saved screen share quality to the active capture
+   * track, if one exists. Tightens the same frameRate/width/height
+   * constraints and contentHint used at capture start (see
+   * toggleScreenshare), since changing publish-time encoding params like
+   * maxBitrate on an already-negotiated track isn't supported by the
+   * underlying WebRTC APIs - only the capture-side constraints can be
+   * adjusted live.
+   */
+  private async applyCurrentScreenShareQuality() {
+    if (!this.screenshare()) return;
+
+    const room = this.room();
+    const videoTrack = room?.localParticipant.getTrackPublication(
+      Track.Source.ScreenShare,
+    )?.videoTrack;
+    if (!videoTrack) return;
+
+    const quality = this.getCurrentScreenShareQuality();
+
+    await videoTrack.mediaStreamTrack.applyConstraints({
+      frameRate: quality.resolution.frameRate
+        ? {
+            min: Math.min(24, quality.resolution.frameRate),
+            ideal: quality.resolution.frameRate,
+            max: quality.resolution.frameRate,
+          }
+        : undefined,
+      width:
+        quality.resolution.width === 0
+          ? undefined
+          : { max: quality.resolution.width },
+      height:
+        quality.resolution.width === 0
+          ? undefined
+          : { max: quality.resolution.height },
+    });
+    videoTrack.mediaStreamTrack.contentHint = quality.contentHint;
+  }
+
+  /**
+   * Enable or disable the screen share audio track live, without stopping
+   * and restarting the share.
+   */
+  async setScreenShareAudio(enabled: boolean) {
+    this.#settings.screenShareAudio = enabled;
+
+    const room = this.room();
+    if (!room) return;
+
+    const audioTrack = room.localParticipant.getTrackPublication(
+      Track.Source.ScreenShareAudio,
+    );
+    if (audioTrack?.track) {
+      if (enabled) {
+        audioTrack.track.unmute();
+      } else {
+        audioTrack.track.mute();
       }
     }
   }

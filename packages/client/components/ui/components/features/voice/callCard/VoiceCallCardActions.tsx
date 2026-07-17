@@ -4,7 +4,7 @@ import { Show } from "solid-js";
 import { useLingui } from "@lingui-solid/solid/macro";
 import { styled } from "styled-system/jsx";
 
-import { DeviceContextMenu } from "@revolt/app";
+import { DeviceContextMenu, ShareStreamMenu } from "@revolt/app";
 import { CONFIGURATION } from "@revolt/common";
 import { useVoice } from "@revolt/rtc";
 import { useState } from "@revolt/state";
@@ -119,6 +119,9 @@ export function VoiceCallCardActions(props: { size: "xs" | "sm" }) {
                 : t`Share screen`
               : t`Coming soon! 👀`,
           },
+          contextMenu: voice.screenshare()
+            ? () => <ShareStreamMenu />
+            : undefined,
         }}
         isDisabled={!enableVideo}
       >

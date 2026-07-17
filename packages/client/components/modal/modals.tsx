@@ -50,7 +50,6 @@ import { RenameSessionModal } from "./modals/RenameSession";
 import { ReportContentModal } from "./modals/ReportContent";
 import { ResetBotTokenModal } from "./modals/ResetBotToken";
 import { ScreenSharePickerModal } from "./modals/ScreenSharePicker";
-import { ScreenShareSettingsModal } from "./modals/ScreenShareSettings";
 import { ServerIdentityModal } from "./modals/ServerIdentity";
 import { ServerInfoModal } from "./modals/ServerInfo";
 import { SettingsModal } from "./modals/Settings";
@@ -189,8 +188,6 @@ export function RenderModal(props: ActiveModal & { onClose: () => void }) {
     case "remove_member":
       return <RemoveMemberModal {...modalProps} />;
 
-    case "screen_share_settings":
-      return <ScreenShareSettingsModal {...modalProps} />;
     case "screen_share_picker":
       return <ScreenSharePickerModal {...modalProps} />;
     default:

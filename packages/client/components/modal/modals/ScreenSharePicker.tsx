@@ -2,7 +2,6 @@ import { Trans, useLingui } from "@lingui-solid/solid/macro";
 import { createFormControl, createFormGroup } from "solid-forms";
 
 import { useState } from "@revolt/state";
-import { ScreenShareQualityName } from "@revolt/state/stores/Voice";
 import { Avatar, Column, Dialog, DialogProps, Form2, Ripple } from "@revolt/ui";
 
 import { createMemo } from "solid-js";
@@ -16,19 +15,12 @@ export function ScreenSharePickerModal(
   const { t } = useLingui();
 
   const group = createFormGroup({
-    qualityName: createFormControl<ScreenShareQualityName>(
-      voice.screenShareQuality || "low",
-    ),
     audio: createFormControl(voice.screenShareAudio),
     idx: createFormControl([0], { required: true }),
   });
 
   async function onSubmit() {
-    props.callback(
-      group.controls.idx.value[0],
-      group.controls.qualityName.value,
-      group.controls.audio.value,
-    );
+    props.callback(group.controls.idx.value[0], group.controls.audio.value);
     props.onClose();
   }
 
@@ -82,15 +74,6 @@ export function ScreenSharePickerModal(
               </Item>
             )}
           </Form2.VirtualSelect>
-          <Form2.ButtonGroup
-            control={group.controls.qualityName}
-            buttonDefinitions={props.qualities.map((quality) => {
-              return {
-                children: quality.fullName,
-                value: quality.name,
-              };
-            })}
-          />
           <Form2.Checkbox control={group.controls.audio}>
             <Trans>Share audio</Trans>
           </Form2.Checkbox>

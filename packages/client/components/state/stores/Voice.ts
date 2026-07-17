@@ -14,20 +14,29 @@ const NoiseSuppresionStates: NoiseSuppresionState[] = [
 ];
 
 /**
- * Possible screen share qualities. Low is 720p@30fps, high 1080p@30fps, high60 is 1080p@60fps
- * and text is source@5fps.
+ * Screen share resolution options, selectable independently of frame rate.
  */
-export type ScreenShareQualityName = "low" | "high" | "high60" | "text";
+export type ScreenShareResolution = "480p" | "720p" | "1080p" | "1440p";
 
 /**
- * Array of available screen share quality names.
+ * Array of available screen share resolutions.
  */
-export const ScreenShareQualityNames: ScreenShareQualityName[] = [
-  "low",
-  "high",
-  "high60",
-  "text",
+export const ScreenShareResolutions: ScreenShareResolution[] = [
+  "480p",
+  "720p",
+  "1080p",
+  "1440p",
 ];
+
+/**
+ * Screen share frame rate options, selectable independently of resolution.
+ */
+export type ScreenShareFrameRate = 15 | 30 | 60;
+
+/**
+ * Array of available screen share frame rates.
+ */
+export const ScreenShareFrameRates: ScreenShareFrameRate[] = [15, 30, 60];
 
 export interface TypeVoice {
   preferredAudioInputDevice?: string;
@@ -38,8 +47,9 @@ export interface TypeVoice {
   noiseSupression: NoiseSuppresionState;
   autoGainControl: boolean;
 
-  screenShareQuality: ScreenShareQualityName;
-  screenShareQualityAsk: boolean;
+  screenShareResolution: ScreenShareResolution;
+  screenShareFrameRate: ScreenShareFrameRate;
+  screenShareTextMode: boolean;
   screenShareAudio: boolean;
 
   inputVolume: number;
@@ -81,8 +91,9 @@ export class Voice extends AbstractStore<"voice", TypeVoice> {
       echoCancellation: true,
       noiseSupression: "browser",
       autoGainControl: true,
-      screenShareQuality: "low",
-      screenShareQualityAsk: true,
+      screenShareResolution: "720p",
+      screenShareFrameRate: 30,
+      screenShareTextMode: false,
       screenShareAudio: true,
       inputVolume: 1.0,
       outputVolume: 1.0,
@@ -134,14 +145,21 @@ export class Voice extends AbstractStore<"voice", TypeVoice> {
     }
 
     if (
-      input.screenShareQuality &&
-      ScreenShareQualityNames.includes(input.screenShareQuality)
+      input.screenShareResolution &&
+      ScreenShareResolutions.includes(input.screenShareResolution)
     ) {
-      data.screenShareQuality = input.screenShareQuality;
+      data.screenShareResolution = input.screenShareResolution;
     }
 
-    if (typeof input.screenShareQualityAsk === "boolean") {
-      data.screenShareQualityAsk = input.screenShareQualityAsk;
+    if (
+      input.screenShareFrameRate &&
+      ScreenShareFrameRates.includes(input.screenShareFrameRate)
+    ) {
+      data.screenShareFrameRate = input.screenShareFrameRate;
+    }
+
+    if (typeof input.screenShareTextMode === "boolean") {
+      data.screenShareTextMode = input.screenShareTextMode;
     }
 
     if (typeof input.screenShareAudio === "boolean") {
@@ -316,17 +334,25 @@ export class Voice extends AbstractStore<"voice", TypeVoice> {
   }
 
   /**
-   * Set screen share quality
+   * Set screen share resolution
    */
-  set screenShareQuality(value: ScreenShareQualityName) {
-    this.set("screenShareQuality", value);
+  set screenShareResolution(value: ScreenShareResolution) {
+    this.set("screenShareResolution", value);
   }
 
   /**
-   * Set screen share quality always ask
+   * Set screen share frame rate
    */
-  set screenShareQualityAsk(value: boolean) {
-    this.set("screenShareQualityAsk", value);
+  set screenShareFrameRate(value: ScreenShareFrameRate) {
+    this.set("screenShareFrameRate", value);
+  }
+
+  /**
+   * Set whether screen share is optimised for text (native resolution,
+   * capped frame rate) instead of the resolution/frame rate grid
+   */
+  set screenShareTextMode(value: boolean) {
+    this.set("screenShareTextMode", value);
   }
 
   /**
@@ -407,17 +433,24 @@ export class Voice extends AbstractStore<"voice", TypeVoice> {
   }
 
   /**
-   * Get screen share quality
+   * Get screen share resolution
    */
-  get screenShareQuality(): ScreenShareQualityName | undefined {
-    return this.get().screenShareQuality;
+  get screenShareResolution(): ScreenShareResolution {
+    return this.get().screenShareResolution;
   }
 
   /**
-   * Get screen share quality always ask
+   * Get screen share frame rate
    */
-  get screenShareQualityAsk(): boolean {
-    return this.get().screenShareQualityAsk;
+  get screenShareFrameRate(): ScreenShareFrameRate {
+    return this.get().screenShareFrameRate;
+  }
+
+  /**
+   * Get whether screen share is optimised for text
+   */
+  get screenShareTextMode(): boolean {
+    return this.get().screenShareTextMode;
   }
 
   /**

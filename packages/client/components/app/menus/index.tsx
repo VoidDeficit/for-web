@@ -4,5 +4,6 @@ export { DeviceContextMenu } from "./DeviceContextMenu";
 export { MessageContextMenu } from "./MessageContextMenu";
 export { ServerContextMenu } from "./ServerContextMenu";
 export { ServerSidebarContextMenu } from "./ServerSidebarContextMenu";
+export { ShareStreamMenu } from "./ShareStreamMenu";
 export { StreamStatsMenu } from "./StreamStatsMenu";
 export { UserContextMenu } from "./UserContextMenu";

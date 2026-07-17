@@ -1,4 +1,3 @@
-import { TrackReference } from "solid-livekit-components";
 import {
   API,
   Bot,
@@ -23,7 +22,6 @@ import { ProtocolV1 } from "stoat.js/lib/events/v1";
 
 import type { SettingsConfigurations } from "@revolt/app";
 import { CategoryData } from "@revolt/app/menus/CategoryContextMenu";
-import { ScreenShareQualityName } from "@revolt/state/stores/Voice";
 
 import type { ChangelogResponse } from "./modals/Changelog";
 
@@ -318,21 +316,8 @@ export type Modals =
       user: User;
     }
   | {
-      type: "screen_share_settings";
-      trackReference: TrackReference;
-      qualities: { name: string; fullName: string }[];
-      audio: boolean;
-      callback: (qualityName: ScreenShareQualityName, audio: boolean) => void;
-      onCancel: () => void;
-    }
-  | {
       type: "screen_share_picker";
-      callback: (
-        idx: number,
-        qualityName: ScreenShareQualityName,
-        audio: boolean,
-      ) => void;
-      qualities: { name: string; fullName: string }[];
+      callback: (idx: number, audio: boolean) => void;
       sources: {
         idx: number;
         name: string;

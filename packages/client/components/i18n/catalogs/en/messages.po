@@ -420,8 +420,8 @@ msgid "Already friends with this user."
 msgstr "Already friends with this user."
 
 #: components/app/interface/settings/user/voice/ScreenShareOptions.tsx
-msgid "Always Ask for Screen Share Quality"
-msgstr "Always Ask for Screen Share Quality"
+#~ msgid "Always Ask for Screen Share Quality"
+#~ msgstr "Always Ask for Screen Share Quality"
 
 #: components/app/interface/settings/user/Language.tsx
 msgid "American (MM/DD/YYYY)"
@@ -472,8 +472,8 @@ msgid "Assign Roles"
 msgstr "Assign Roles"
 
 #: components/modal/modals/ScreenShareSettings.tsx
-msgid "Audio disabled by browser"
-msgstr "Audio disabled by browser"
+#~ msgid "Audio disabled by browser"
+#~ msgstr "Audio disabled by browser"
 
 #: components/modal/modals/MFAFlow.tsx
 #: components/modal/modals/MFAFlow.tsx
@@ -544,6 +544,10 @@ msgstr "Banner"
 msgid "Bans"
 msgstr "Bans"
 
+#: components/app/menus/StreamStatsMenu.tsx
+msgid "Bitrate"
+msgstr "Bitrate"
+
 #: components/app/menus/UserContextMenu.tsx
 msgid "Block user"
 msgstr "Block user"
@@ -605,7 +609,6 @@ msgstr "Can't find the perfect GIF? Head to Gifbox and upload your own for every
 
 #: components/modal/modals/SignOutSessions.tsx
 #: components/modal/modals/ServerIdentity.tsx
-#: components/modal/modals/ScreenShareSettings.tsx
 #: components/modal/modals/ScreenSharePicker.tsx
 #: components/modal/modals/ResetBotToken.tsx
 #: components/modal/modals/ReportContent.tsx
@@ -802,6 +805,10 @@ msgstr "Close conversation with {0}?"
 #: components/modal/modals/JoinServer.tsx
 msgid "Code"
 msgstr "Code"
+
+#: components/app/menus/StreamStatsMenu.tsx
+msgid "Codec"
+msgstr "Codec"
 
 #: components/ui/components/features/voice/callCard/VoiceCallCardActions.tsx
 #: components/ui/components/features/voice/callCard/VoiceCallCardActions.tsx
@@ -1237,8 +1244,8 @@ msgid "Do Not Disturb"
 msgstr "Do Not Disturb"
 
 #: components/modal/modals/ScreenShareSettings.tsx
-msgid "Don't ask me again"
-msgstr "Don't ask me again"
+#~ msgid "Don't ask me again"
+#~ msgstr "Don't ask me again"
 
 #: components/modal/modals/LinkWarning.tsx
 msgid "Don't ask me again for "
@@ -1501,6 +1508,14 @@ msgstr "For 3 hours"
 msgid "For 8 hours"
 msgstr "For 8 hours"
 
+#: components/app/menus/StreamStatsMenu.tsx
+msgid "Frame rate"
+msgstr "Frame rate"
+
+#: components/app/interface/settings/user/voice/ScreenShareOptions.tsx
+msgid "Frame Rate"
+msgstr "Frame Rate"
+
 #: src/interface/Friends.tsx
 #: src/interface/navigation/channels/HomeSidebar.tsx
 msgid "Friends"
@@ -1550,7 +1565,6 @@ msgstr "Give feedback on Stoat"
 msgid "Give us some detail"
 msgstr "Give us some detail"
 
-#: components/modal/modals/ScreenShareSettings.tsx
 #: components/modal/modals/ScreenSharePicker.tsx
 msgid "Go"
 msgstr "Go"
@@ -1734,6 +1748,10 @@ msgstr "irrelevant joke badge 2"
 msgid "ISO Standard (YYYY-MM-DD)"
 msgstr "ISO Standard (YYYY-MM-DD)"
 
+#: components/app/menus/StreamStatsMenu.tsx
+msgid "Jitter"
+msgstr "Jitter"
+
 #: components/modal/modals/JoinServer.tsx
 #: components/modal/modals/Invite.tsx
 msgid "Join"
@@ -1850,6 +1868,10 @@ msgstr "Let us know how we can improve our app by giving us feedback."
 #: components/app/interface/settings/user/appearance/AppearanceMenu.tsx
 msgid "Light"
 msgstr "Light"
+
+#: components/app/menus/StreamStatsMenu.tsx
+msgid "Limited by"
+msgstr "Limited by"
 
 #: components/app/interface/settings/channel/permissions/ChannelPermissionsEditor.tsx
 msgid "Listen"
@@ -2271,6 +2293,11 @@ msgstr "Open server settings"
 msgid "Open settings"
 msgstr "Open settings"
 
+#: components/app/menus/ShareStreamMenu.tsx
+#: components/app/interface/settings/user/voice/ScreenShareOptions.tsx
+msgid "Optimise for Text"
+msgstr "Optimise for Text"
+
 #: components/modal/modals/ReportContent.tsx
 msgid "Other"
 msgstr "Other"
@@ -2283,6 +2310,10 @@ msgstr "Output Volume"
 #: components/app/interface/settings/ChannelSettings.tsx
 msgid "Overview"
 msgstr "Overview"
+
+#: components/app/menus/StreamStatsMenu.tsx
+msgid "Packets lost"
+msgstr "Packets lost"
 
 #: components/app/interface/settings/server/bans/ListBans.tsx
 msgid "Pardon User"
@@ -2590,6 +2621,11 @@ msgstr "Reset Recovery Codes"
 msgid "Reset Token"
 msgstr "Reset Token"
 
+#: components/app/menus/StreamStatsMenu.tsx
+#: components/app/interface/settings/user/voice/ScreenShareOptions.tsx
+msgid "Resolution"
+msgstr "Resolution"
+
 #: components/ui/components/features/profiles/ProfileBadges.tsx
 msgid "Responsibly disclosed security issues"
 msgstr "Responsibly disclosed security issues"
@@ -2628,6 +2664,10 @@ msgstr "Role Name"
 msgid "Roles"
 msgstr "Roles"
 
+#: components/app/menus/StreamStatsMenu.tsx
+msgid "Round trip"
+msgstr "Round trip"
+
 #: components/modal/modals/ServerIdentity.tsx
 #: components/modal/modals/CustomStatus.tsx
 #: components/app/interface/settings/user/profile/UserProfileEditor.tsx
@@ -2656,7 +2696,6 @@ msgstr "Saved Notes"
 msgid "Scams or fraud"
 msgstr "Scams or fraud"
 
-#: components/modal/modals/ScreenShareSettings.tsx
 #: components/app/interface/settings/user/voice/ScreenShareOptions.tsx
 msgid "Screen Share Settings"
 msgstr "Screen Share Settings"
@@ -2699,8 +2738,8 @@ msgid "Select noise suppression"
 msgstr "Select noise suppression"
 
 #: components/app/interface/settings/user/voice/ScreenShareOptions.tsx
-msgid "Select screen share quality"
-msgstr "Select screen share quality"
+#~ msgid "Select screen share quality"
+#~ msgstr "Select screen share quality"
 
 #: components/app/interface/settings/user/voice/VoiceInputOptions.tsx
 msgid "Select video input"
@@ -2823,7 +2862,6 @@ msgstr "Setup recovery codes"
 msgid "Several people are typing…"
 msgstr "Several people are typing…"
 
-#: components/modal/modals/ScreenShareSettings.tsx
 #: components/modal/modals/ScreenSharePicker.tsx
 msgid "Share audio"
 msgstr "Share audio"
@@ -2836,6 +2874,10 @@ msgstr "Share camera or screen in voice call"
 #: components/ui/components/features/voice/callCard/VoiceCallCardActions.tsx
 msgid "Share screen"
 msgstr "Share screen"
+
+#: components/app/menus/ShareStreamMenu.tsx
+msgid "Share Stream Audio"
+msgstr "Share Stream Audio"
 
 #: components/app/interface/settings/user/Native.tsx
 msgid "Show corrections and suggestions as you type."
@@ -2970,9 +3012,21 @@ msgstr "Stop camera"
 msgid "Stop sharing"
 msgstr "Stop sharing"
 
+#: components/app/menus/ShareStreamMenu.tsx
+msgid "Stop Streaming"
+msgstr "Stop Streaming"
+
 #: components/app/interface/settings/user/notifications/Sounds.tsx
 msgid "Stream End"
 msgstr "Stream End"
+
+#: components/app/menus/StreamStatsMenu.tsx
+msgid "Stream Info"
+msgstr "Stream Info"
+
+#: components/app/menus/ShareStreamMenu.tsx
+msgid "Stream Quality"
+msgstr "Stream Quality"
 
 #: components/app/interface/settings/user/notifications/Sounds.tsx
 msgid "Stream Start"
@@ -3213,6 +3267,10 @@ msgstr "Undeafen"
 #: src/LoadingScreen.tsx
 msgid "Unknown"
 msgstr "Unknown"
+
+#: components/app/menus/DeviceContextMenu.tsx
+msgid "Unknown device"
+msgstr "Unknown device"
 
 #: components/markdown/plugins/anchors.tsx
 msgid "Unknown Server"

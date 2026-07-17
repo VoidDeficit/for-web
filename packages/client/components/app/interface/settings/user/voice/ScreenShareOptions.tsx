@@ -2,7 +2,10 @@ import { Trans } from "@lingui-solid/solid/macro";
 
 import { useVoice } from "@revolt/rtc";
 import { useState } from "@revolt/state";
-import { ScreenShareQualityName } from "@revolt/state/stores/Voice";
+import {
+  ScreenShareFrameRate,
+  ScreenShareResolution,
+} from "@revolt/state/stores/Voice";
 import {
   CategoryButton,
   CategorySelectOption,
@@ -16,7 +19,8 @@ export function ScreenShareOptions() {
   const { voice } = useState();
   const voiceContext = useVoice();
 
-  const qualities = voiceContext.getEnabledScreenShareQualities();
+  const enabledResolutions = () =>
+    voiceContext.getEnabledScreenShareResolutions();
 
   return (
     <Column>
@@ -25,29 +29,42 @@ export function ScreenShareOptions() {
       </Text>
       <CategoryButton.Group>
         <CategoryButton.Select
-          icon={<Symbol>screen_share</Symbol>}
-          title={<Trans>Select screen share quality</Trans>}
+          icon={<Symbol>aspect_ratio</Symbol>}
+          title={<Trans>Resolution</Trans>}
           options={
             Object.fromEntries(
-              Object.keys(qualities).map((name) => [
-                name,
-                {
-                  title: qualities[name as ScreenShareQualityName]!.fullName,
-                },
+              enabledResolutions().map((resolution) => [
+                resolution,
+                { title: resolution },
               ]),
-            ) as { [key in ScreenShareQualityName]: CategorySelectOption }
+            ) as { [key in ScreenShareResolution]: CategorySelectOption }
           }
-          value={voice.screenShareQuality}
-          onUpdate={(ns) => (voice.screenShareQuality = ns)}
+          value={voice.screenShareResolution}
+          onUpdate={(resolution) => (voice.screenShareResolution = resolution)}
+        />
+        <CategoryButton.Select<"15" | "30" | "60">
+          icon={<Symbol>speed</Symbol>}
+          title={<Trans>Frame Rate</Trans>}
+          options={{
+            "15": { title: "15 FPS" },
+            "30": { title: "30 FPS" },
+            "60": { title: "60 FPS" },
+          }}
+          value={`${voice.screenShareFrameRate}`}
+          onUpdate={(frameRate) =>
+            (voice.screenShareFrameRate = Number(
+              frameRate,
+            ) as ScreenShareFrameRate)
+          }
         />
         <CategoryButton
           icon="blank"
-          action={<Checkbox checked={voice.screenShareQualityAsk} />}
+          action={<Checkbox checked={voice.screenShareTextMode} />}
           onClick={() =>
-            (voice.screenShareQualityAsk = !voice.screenShareQualityAsk)
+            (voice.screenShareTextMode = !voice.screenShareTextMode)
           }
         >
-          <Trans>Always Ask for Screen Share Quality</Trans>
+          <Trans>Optimise for Text</Trans>
         </CategoryButton>
       </CategoryButton.Group>
     </Column>
