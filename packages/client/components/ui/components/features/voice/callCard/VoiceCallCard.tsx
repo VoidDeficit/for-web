@@ -246,6 +246,38 @@ function VoiceCallCard(props: { channel: Channel }) {
     }
   });
 
+  // The Fullscreen API only allows elements *inside* the fullscreened
+  // element (and its descendants) to render on top of everything else.
+  // Context menus, tooltips, etc. all portal into a single app-wide
+  // #floating element mounted as a sibling of #root - normally fine, but
+  // invisible while this card is fullscreened since #floating is outside
+  // its subtree. Move #floating inside the fullscreened element for the
+  // duration, then restore it to its original position on exit.
+  onMount(() => {
+    const floatingEl = document.getElementById("floating");
+    const originalParent = floatingEl?.parentElement;
+    const originalNextSibling = floatingEl?.nextSibling ?? null;
+
+    function onFullscreenChange() {
+      if (!floatingEl) return;
+      if (document.fullscreenElement === viewRef) {
+        viewRef?.appendChild(floatingEl);
+      } else if (floatingEl.parentElement === viewRef) {
+        originalParent?.insertBefore(floatingEl, originalNextSibling);
+      }
+    }
+
+    document.addEventListener("fullscreenchange", onFullscreenChange);
+    onCleanup(() => {
+      document.removeEventListener("fullscreenchange", onFullscreenChange);
+      // If this card unmounts while still holding #floating (e.g. voice
+      // disconnects while fullscreened), make sure it isn't left detached.
+      if (floatingEl && floatingEl.parentElement === viewRef) {
+        originalParent?.insertBefore(floatingEl, originalNextSibling);
+      }
+    });
+  });
+
   return (
     <Show when={voice.showCard(props.channel)}>
       <Base>
