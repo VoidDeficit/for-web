@@ -4,7 +4,11 @@ import { Show } from "solid-js";
 import { useLingui } from "@lingui-solid/solid/macro";
 import { styled } from "styled-system/jsx";
 
-import { DeviceContextMenu, ShareStreamMenu } from "@revolt/app";
+import {
+  CameraEffectsMenu,
+  DeviceContextMenu,
+  ShareStreamMenu,
+} from "@revolt/app";
 import { CONFIGURATION } from "@revolt/common";
 import { useVoice } from "@revolt/rtc";
 import { useState } from "@revolt/state";
@@ -99,6 +103,7 @@ export function VoiceCallCardActions(props: { size: "xs" | "sm" }) {
                 : t`Start camera`
               : t`Coming soon! 👀`,
           },
+          contextMenu: voice.video() ? () => <CameraEffectsMenu /> : undefined,
         }}
         isDisabled={!enableVideo}
       >

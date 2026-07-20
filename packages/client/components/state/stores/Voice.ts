@@ -38,6 +38,28 @@ export type ScreenShareFrameRate = 15 | 30 | 60;
  */
 export const ScreenShareFrameRates: ScreenShareFrameRate[] = [15, 30, 60];
 
+/**
+ * Camera background effect mode.
+ */
+export type CameraBackgroundMode = "none" | "blur" | "image";
+
+const CameraBackgroundModes: CameraBackgroundMode[] = ["none", "blur", "image"];
+
+/**
+ * Built-in virtual background presets, identified by filename (served
+ * from public/backgrounds/).
+ */
+export type CameraBackgroundPreset = "purple" | "blue" | "forest";
+
+/**
+ * Array of available virtual background presets.
+ */
+export const CameraBackgroundPresets: CameraBackgroundPreset[] = [
+  "purple",
+  "blue",
+  "forest",
+];
+
 export interface TypeVoice {
   preferredAudioInputDevice?: string;
   preferredAudioOutputDevice?: string;
@@ -56,6 +78,11 @@ export interface TypeVoice {
   screenShareFrameRate: ScreenShareFrameRate;
   screenShareTextMode: boolean;
   screenShareAudio: boolean;
+
+  cameraBackgroundMode: CameraBackgroundMode;
+  /** Blur strength (px radius passed to the segmentation processor) */
+  cameraBlurRadius: number;
+  cameraBackgroundPreset: CameraBackgroundPreset;
 
   inputVolume: number;
   outputVolume: number;
@@ -110,6 +137,9 @@ export class Voice extends AbstractStore<"voice", TypeVoice> {
       screenShareFrameRate: 30,
       screenShareTextMode: false,
       screenShareAudio: true,
+      cameraBackgroundMode: "none",
+      cameraBlurRadius: 10,
+      cameraBackgroundPreset: "purple",
       inputVolume: 1.0,
       outputVolume: 1.0,
       deafen: false,
@@ -199,6 +229,24 @@ export class Voice extends AbstractStore<"voice", TypeVoice> {
 
     if (typeof input.screenShareAudio === "boolean") {
       data.screenShareAudio = input.screenShareAudio;
+    }
+
+    if (
+      input.cameraBackgroundMode &&
+      CameraBackgroundModes.includes(input.cameraBackgroundMode)
+    ) {
+      data.cameraBackgroundMode = input.cameraBackgroundMode;
+    }
+
+    if (typeof input.cameraBlurRadius === "number") {
+      data.cameraBlurRadius = Math.min(30, Math.max(1, input.cameraBlurRadius));
+    }
+
+    if (
+      input.cameraBackgroundPreset &&
+      CameraBackgroundPresets.includes(input.cameraBackgroundPreset)
+    ) {
+      data.cameraBackgroundPreset = input.cameraBackgroundPreset;
     }
 
     if (typeof input.inputVolume === "number") {
@@ -433,6 +481,27 @@ export class Voice extends AbstractStore<"voice", TypeVoice> {
   }
 
   /**
+   * Set camera background effect mode
+   */
+  set cameraBackgroundMode(value: CameraBackgroundMode) {
+    this.set("cameraBackgroundMode", value);
+  }
+
+  /**
+   * Set camera background blur radius
+   */
+  set cameraBlurRadius(value: number) {
+    this.set("cameraBlurRadius", Math.min(30, Math.max(1, value)));
+  }
+
+  /**
+   * Set camera virtual background preset
+   */
+  set cameraBackgroundPreset(value: CameraBackgroundPreset) {
+    this.set("cameraBackgroundPreset", value);
+  }
+
+  /**
    * Set input volume
    */
   set inputVolume(value: number) {
@@ -563,6 +632,27 @@ export class Voice extends AbstractStore<"voice", TypeVoice> {
    */
   get screenShareAudio(): boolean {
     return this.get().screenShareAudio;
+  }
+
+  /**
+   * Get camera background effect mode
+   */
+  get cameraBackgroundMode(): CameraBackgroundMode {
+    return this.get().cameraBackgroundMode;
+  }
+
+  /**
+   * Get camera background blur radius
+   */
+  get cameraBlurRadius(): number {
+    return this.get().cameraBlurRadius;
+  }
+
+  /**
+   * Get camera virtual background preset
+   */
+  get cameraBackgroundPreset(): CameraBackgroundPreset {
+    return this.get().cameraBackgroundPreset;
   }
 
   /**

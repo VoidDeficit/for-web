@@ -80,6 +80,20 @@ export default {
   RNNOISE_WORKLET_CDN_URL:
     (import.meta.env.VITE_RNNOISE_WORKLET_CDN_URL as string) ?? "",
   /**
+   * MediaPipe tasks-vision WASM fileset location, used for camera
+   * background blur/replacement. Defaults to blank, which uses the
+   * jsDelivr CDN URL provided by @livekit/track-processors.
+   */
+  CAMERA_SEGMENTER_WASM_URL:
+    (import.meta.env.VITE_CAMERA_SEGMENTER_WASM_URL as string) ?? "",
+  /**
+   * MediaPipe selfie segmentation model location, used for camera
+   * background blur/replacement. Defaults to blank, which uses Google's
+   * hosted model provided by @livekit/track-processors.
+   */
+  CAMERA_SEGMENTER_MODEL_URL:
+    (import.meta.env.VITE_CAMERA_SEGMENTER_MODEL_URL as string) ?? "",
+  /**
    * Enable video allows the web client to enable video and screensharing
    */
   ENABLE_VIDEO:

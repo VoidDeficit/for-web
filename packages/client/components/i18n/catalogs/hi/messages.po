@@ -560,6 +560,10 @@ msgstr "अवरोधित"
 msgid "Blocked User"
 msgstr "अवरुद्ध उपयोगकर्ता"
 
+#: components/app/menus/CameraEffectsMenu.tsx
+msgid "Blur Background"
+msgstr ""
+
 #: components/app/interface/channels/text/Message.tsx
 msgid "Bot"
 msgstr "बौट"
@@ -2182,6 +2186,10 @@ msgstr ""
 #: components/modal/modals/ServerIdentity.tsx
 msgid "Nickname"
 msgstr "उपनाम"
+
+#: components/app/menus/CameraEffectsMenu.tsx
+msgid "No Effect"
+msgstr ""
 
 #: components/ui/components/features/messaging/composition/picker/GifPicker.tsx
 msgid "No GIFs found"

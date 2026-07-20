@@ -560,6 +560,10 @@ msgstr "Blocked"
 msgid "Blocked User"
 msgstr "Blocked User"
 
+#: components/app/menus/CameraEffectsMenu.tsx
+msgid "Blur Background"
+msgstr "Blur Background"
+
 #: components/app/interface/channels/text/Message.tsx
 msgid "Bot"
 msgstr "Bot"
@@ -2182,6 +2186,10 @@ msgstr "New to the server"
 #: components/modal/modals/ServerIdentity.tsx
 msgid "Nickname"
 msgstr "Nickname"
+
+#: components/app/menus/CameraEffectsMenu.tsx
+msgid "No Effect"
+msgstr "No Effect"
 
 #: components/ui/components/features/messaging/composition/picker/GifPicker.tsx
 msgid "No GIFs found"

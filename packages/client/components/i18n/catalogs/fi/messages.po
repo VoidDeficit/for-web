@@ -560,6 +560,10 @@ msgstr "Estetty"
 msgid "Blocked User"
 msgstr "Estetty käyttäjä"
 
+#: components/app/menus/CameraEffectsMenu.tsx
+msgid "Blur Background"
+msgstr ""
+
 #: components/app/interface/channels/text/Message.tsx
 msgid "Bot"
 msgstr "Botti"
@@ -2182,6 +2186,10 @@ msgstr ""
 #: components/modal/modals/ServerIdentity.tsx
 msgid "Nickname"
 msgstr "Nimimerkki"
+
+#: components/app/menus/CameraEffectsMenu.tsx
+msgid "No Effect"
+msgstr ""
 
 #: components/ui/components/features/messaging/composition/picker/GifPicker.tsx
 msgid "No GIFs found"

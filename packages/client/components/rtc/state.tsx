@@ -22,6 +22,8 @@ import { CONFIGURATION } from "@revolt/common";
 import { ModalController, useModals } from "@revolt/modal";
 import { useState } from "@revolt/state";
 import {
+  CameraBackgroundMode,
+  CameraBackgroundPreset,
   ScreenShareFrameRate,
   ScreenShareResolution,
   Voice as VoiceSettings,
@@ -31,6 +33,12 @@ import { VoiceCallCardContext } from "@revolt/ui/components/features/voice/callC
 import { MicProcessor } from "./audio/MicProcessor";
 import { InRoom } from "./components/InRoom";
 import { RoomAudioManager } from "./components/RoomAudioManager";
+import {
+  createCameraProcessor,
+  switchCameraProcessor,
+} from "./video/CameraProcessor";
+
+import type { BackgroundProcessorWrapper } from "@livekit/track-processors";
 
 type State =
   | "READY"
@@ -110,6 +118,7 @@ class Voice {
   private getClient;
   private screenShareTracks: Set<string>;
   private micProcessor?: MicProcessor;
+  private cameraProcessor?: BackgroundProcessorWrapper;
 
   constructor(
     voiceSettings: VoiceSettings,
@@ -292,6 +301,7 @@ class Voice {
 
       this.screenShareTracks = new Set();
       this.micProcessor = undefined;
+      this.cameraProcessor = undefined;
 
       this.sound.playSound("userLeaveVoice");
     } catch (e) {
@@ -385,13 +395,70 @@ class Voice {
     }
   }
 
+  /**
+   * Set the camera background effect (none/blur/virtual image) and apply
+   * it live if the camera is currently on. Persists the choice so future
+   * camera starts use it too.
+   */
+  async setCameraBackground(
+    mode: CameraBackgroundMode,
+    options?: { blurRadius?: number; preset?: CameraBackgroundPreset },
+  ) {
+    this.#settings.cameraBackgroundMode = mode;
+    if (options?.blurRadius !== undefined) {
+      this.#settings.cameraBlurRadius = options.blurRadius;
+    }
+    if (options?.preset !== undefined) {
+      this.#settings.cameraBackgroundPreset = options.preset;
+    }
+
+    const videoTrack = this.room()?.localParticipant.getTrackPublication(
+      Track.Source.Camera,
+    )?.videoTrack;
+    if (!videoTrack) return;
+
+    if (this.cameraProcessor) {
+      await switchCameraProcessor(
+        this.cameraProcessor,
+        this.#settings.cameraBackgroundMode,
+        this.#settings.cameraBlurRadius,
+        this.#settings.cameraBackgroundPreset,
+      );
+      if (mode === "none") {
+        this.cameraProcessor = undefined;
+      }
+    } else if (mode !== "none") {
+      this.cameraProcessor = createCameraProcessor(
+        this.#settings.cameraBackgroundMode,
+        this.#settings.cameraBlurRadius,
+        this.#settings.cameraBackgroundPreset,
+      );
+      if (this.cameraProcessor) {
+        await videoTrack.setProcessor(this.cameraProcessor);
+      }
+    }
+  }
+
   async toggleCamera() {
     try {
       const room = this.room();
       if (!room) throw "invalid state";
-      await room.localParticipant.setCameraEnabled(
-        !room.localParticipant.isCameraEnabled,
-      );
+      const enabling = !room.localParticipant.isCameraEnabled;
+      const publication =
+        await room.localParticipant.setCameraEnabled(enabling);
+
+      if (enabling && publication?.videoTrack) {
+        this.cameraProcessor = createCameraProcessor(
+          this.#settings.cameraBackgroundMode,
+          this.#settings.cameraBlurRadius,
+          this.#settings.cameraBackgroundPreset,
+        );
+        if (this.cameraProcessor) {
+          await publication.videoTrack.setProcessor(this.cameraProcessor);
+        }
+      } else if (!enabling) {
+        this.cameraProcessor = undefined;
+      }
 
       this.#setVideo(room.localParticipant.isCameraEnabled);
     } catch (e) {

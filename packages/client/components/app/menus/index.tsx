@@ -1,3 +1,4 @@
+export { CameraEffectsMenu } from "./CameraEffectsMenu";
 export { CategoryContextMenu } from "./CategoryContextMenu";
 export { ChannelContextMenu } from "./ChannelContextMenu";
 export { DeviceContextMenu } from "./DeviceContextMenu";

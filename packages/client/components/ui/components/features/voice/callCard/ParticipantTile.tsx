@@ -103,9 +103,7 @@ export function ParticipantTile(props: TileProps) {
           //   },
           contextMenu: () => (
             <>
-              <Show when={isScreenShare()}>
-                <StreamStatsMenu track={track} />
-              </Show>
+              <StreamStatsMenu track={track} />
               <UserContextMenu
                 user={user().user!}
                 member={user().member}

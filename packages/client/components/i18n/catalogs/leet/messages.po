@@ -560,6 +560,10 @@ msgstr "8L0CK3D"
 msgid "Blocked User"
 msgstr "8L0CK3D U532"
 
+#: components/app/menus/CameraEffectsMenu.tsx
+msgid "Blur Background"
+msgstr ""
+
 #: components/app/interface/channels/text/Message.tsx
 msgid "Bot"
 msgstr "807"
@@ -2182,6 +2186,10 @@ msgstr ""
 #: components/modal/modals/ServerIdentity.tsx
 msgid "Nickname"
 msgstr "N1CKN4M3"
+
+#: components/app/menus/CameraEffectsMenu.tsx
+msgid "No Effect"
+msgstr ""
 
 #: components/ui/components/features/messaging/composition/picker/GifPicker.tsx
 msgid "No GIFs found"
