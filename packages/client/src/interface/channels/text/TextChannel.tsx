@@ -26,7 +26,7 @@ import {
   TypingIndicator,
   main,
 } from "@revolt/ui";
-import { VoiceChannelCallCardMount } from "@revolt/ui/components/features/voice/callCard/VoiceCallCard";
+import { DockedVoiceCallCard } from "@revolt/ui/components/features/voice/callCard/VoiceCallCard";
 
 import { ChannelHeader } from "../ChannelHeader";
 import { ChannelPageProps } from "../ChannelPage";
@@ -185,7 +185,7 @@ export function TextChannel(props: ChannelPageProps) {
               </BelowFloatingHeader>
             }
           >
-            <VoiceChannelCallCardMount channel={props.channel} />
+            <DockedVoiceCallCard channel={props.channel} />
           </Show>
 
           <Messages

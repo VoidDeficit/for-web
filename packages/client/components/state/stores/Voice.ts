@@ -62,6 +62,12 @@ export interface TypeVoice {
   deafen: boolean;
   micOn: boolean;
 
+  /**
+   * Height of the docked voice/screenshare call panel, as a percentage of
+   * the channel view's height, when not fullscreened.
+   */
+  callCardHeightVh: number;
+
   userVolumes: Record<string, number>;
   userMutes: Record<string, boolean>;
 
@@ -108,6 +114,7 @@ export class Voice extends AbstractStore<"voice", TypeVoice> {
       outputVolume: 1.0,
       deafen: false,
       micOn: true,
+      callCardHeightVh: 40,
       userVolumes: {},
       userMutes: {},
       screenShareVolumes: {},
@@ -208,6 +215,13 @@ export class Voice extends AbstractStore<"voice", TypeVoice> {
 
     if (typeof input.micOn === "boolean") {
       data.micOn = input.micOn;
+    }
+
+    if (typeof input.callCardHeightVh === "number") {
+      data.callCardHeightVh = Math.min(
+        80,
+        Math.max(20, input.callCardHeightVh),
+      );
     }
 
     if (typeof input.userVolumes === "object") {
@@ -447,6 +461,13 @@ export class Voice extends AbstractStore<"voice", TypeVoice> {
   }
 
   /**
+   * Set the docked call panel's height (percentage of viewport height)
+   */
+  set callCardHeightVh(value: number) {
+    this.set("callCardHeightVh", Math.min(80, Math.max(20, value)));
+  }
+
+  /**
    * Get the preferred audio input device
    */
   get preferredAudioInputDevice(): string | undefined {
@@ -570,5 +591,12 @@ export class Voice extends AbstractStore<"voice", TypeVoice> {
    */
   get micOn(): boolean {
     return this.get().micOn;
+  }
+
+  /**
+   * Get the docked call panel's height (percentage of viewport height)
+   */
+  get callCardHeightVh(): number {
+    return this.get().callCardHeightVh;
   }
 }

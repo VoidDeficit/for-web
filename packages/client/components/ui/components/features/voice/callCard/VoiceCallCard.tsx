@@ -1,51 +1,48 @@
+import type { JSX } from "solid-js";
 import {
-  JSX,
-  Match,
-  Show,
-  Switch,
   createContext,
   createEffect,
-  createMemo,
   createSignal,
   onCleanup,
   onMount,
+  Show,
   useContext,
 } from "solid-js";
 import { Portal } from "solid-js/web";
 
-import { createResizeObserver } from "@solid-primitives/resize-observer";
 import { Channel } from "stoat.js";
 import { styled } from "styled-system/jsx";
 
 import { useVoice } from "@revolt/rtc";
 import { useState } from "@revolt/state";
-import { SlideState } from "@revolt/ui/components/navigation/SlideDrawer";
 
 import { VoiceCallCardActiveRoom } from "./VoiceCallCardActiveRoom";
 import { VoiceCallCardPiP } from "./VoiceCallCardPiP";
 import { VoiceCallCardPreview } from "./VoiceCallCardPreview";
 
-type Mode = "floating" | "moving";
 type FloatType = "tl" | "tr" | "bl" | "br";
-
-type Info = {
-  channel: Channel;
-  pos: DOMRect;
-  drawer?: SlideState;
-};
 
 const PAD = 16,
   PAD_X = `${PAD}px`,
   PAD_Y = `${PAD + 56}px`;
 
-const callCardContext = createContext<(info?: Info) => void>();
+// Which channel's docked call card is currently mounted (i.e. which voice
+// channel the user is actively looking at), if any. Used to decide
+// whether the floating PiP should show instead - only one of the two is
+// ever visible for a given call.
+const dockedChannelContext = createContext<(id?: string) => void>();
 
-/** Voice call card context */
+/**
+ * Floating picture-in-picture call card, shown while connected to a call
+ * but not currently looking at that call's channel. Draggable to any
+ * corner of the screen.
+ */
 export function VoiceCallCardContext(props: { children: JSX.Element }) {
   const voice = useVoice();
 
-  const [mode, setMode] = createSignal<Mode>();
-  const [info, setInfo] = createSignal<Info>();
+  const [dockedChannelId, setDockedChannelId] = createSignal<string>();
+  const [float, setFloat] = createSignal<FloatType>("tr");
+  const [moving, setMoving] = createSignal(false);
 
   let ref: HTMLDivElement | undefined,
     events: AbortController | null,
@@ -53,15 +50,20 @@ export function VoiceCallCardContext(props: { children: JSX.Element }) {
     ofsX = 0,
     ofsY = 0;
 
+  // Only show the PiP when connected to a call whose channel isn't the one
+  // currently docked/visible inline (the docked card handles that case).
+  const showPiP = () => {
+    const channel = voice.channel();
+    return !!channel && channel.id !== dockedChannelId();
+  };
+
   function mouseDown(e: PointerEvent) {
     pid = e.pointerId;
-    if (mode() === "floating") {
-      const pos = ref!.getBoundingClientRect();
-      ofsX = e.clientX - pos.x;
-      ofsY = e.clientY - pos.y;
-      setMode("moving");
-      addEvents();
-    }
+    const pos = ref!.getBoundingClientRect();
+    ofsX = e.clientX - pos.x;
+    ofsY = e.clientY - pos.y;
+    setMoving(true);
+    addEvents();
   }
 
   function mouseMove(e: PointerEvent) {
@@ -83,6 +85,7 @@ export function VoiceCallCardContext(props: { children: JSX.Element }) {
     setFloat(left ? (top ? "tl" : "bl") : top ? "tr" : "br");
     //Reset CSS transition on next render pass
     setTimeout(() => (sty.transition = ""), 1);
+    setMoving(false);
     resetEvents();
   }
 
@@ -99,54 +102,28 @@ export function VoiceCallCardContext(props: { children: JSX.Element }) {
     events = null;
   }
 
-  const channel = createMemo(() => {
-    const inf = info();
-
+  createEffect(() => {
     if (!ref) return;
-    const sty = ref.style;
-
-    //Set mode based on state
-    if (inf?.pos && (!inf.drawer || inf.drawer === SlideState.SHOWN)) {
-      sty.transform = `translate(${inf.pos.x}px, ${inf.pos.y}px)`;
-      sty.width = `${inf.pos.width}px`;
-      setMode();
-    } else if (!voice.channel()) {
-      const y = inf?.pos.y ?? ref.getBoundingClientRect().y;
-      sty.transform = `translate(${innerWidth + 50}px, ${y}px)`;
-      setMode();
-    } else if (!mode()) setFloat("tr");
-
-    resetEvents();
-    return inf?.channel;
-  });
-
-  function setFloat(float: FloatType) {
-    const sty = ref!.style,
-      x = float[1] === "l" ? PAD_X : `calc(100vw - var(--flt-w) - ${PAD_X})`,
-      y = float[0] === "t" ? PAD_Y : `calc(100vh - var(--flt-h) - ${PAD_Y})`;
+    const f = float();
+    const sty = ref.style,
+      x = f[1] === "l" ? PAD_X : `calc(100vw - var(--flt-w) - ${PAD_X})`,
+      y = f[0] === "t" ? PAD_Y : `calc(100vh - var(--flt-h) - ${PAD_Y})`;
     sty.transform = `translate(${x}, ${y})`;
-    sty.width = "";
-    setMode("floating");
-  }
+  });
 
   onCleanup(resetEvents);
 
   return (
-    <callCardContext.Provider value={setInfo}>
+    <dockedChannelContext.Provider value={setDockedChannelId}>
       {props.children}
-      <Portal ref={document.getElementById("floating")! as HTMLDivElement}>
-        <Float ref={ref} mode={mode()} onPointerDown={mouseDown}>
-          <Switch>
-            <Match when={mode()}>
-              <VoiceCallCardPiP />
-            </Match>
-            <Match when={channel()}>
-              <VoiceCallCard channel={channel()!} />
-            </Match>
-          </Switch>
-        </Float>
-      </Portal>
-    </callCardContext.Provider>
+      <Show when={showPiP()}>
+        <Portal ref={document.getElementById("floating")! as HTMLDivElement}>
+          <Float ref={ref} moving={moving()} onPointerDown={mouseDown}>
+            <VoiceCallCardPiP />
+          </Float>
+        </Portal>
+      </Show>
+    </dockedChannelContext.Provider>
   );
 }
 
@@ -154,74 +131,41 @@ const Float = styled("div", {
   base: {
     position: "fixed",
     zIndex: 10,
-    pointerEvents: "none",
+    pointerEvents: "all",
     transition: "all .3s cubic-bezier(1, 0, 0, 1)",
-    height: "40vh",
     touchAction: "none",
+    cursor: "grab",
+
+    "--flt-w": "300px",
+    "--flt-h": "170px",
+    width: "var(--flt-w)",
+    height: "var(--flt-h)",
   },
   variants: {
-    mode: {
-      floating: { cursor: "grab" },
-      moving: {
+    moving: {
+      true: {
         cursor: "grabbing",
         transition: "none",
       },
     },
   },
-  compoundVariants: [
-    {
-      mode: ["floating", "moving"],
-      css: {
-        "--flt-w": "300px",
-        "--flt-h": "170px",
-        width: "var(--flt-w)",
-        height: "var(--flt-h)",
-      },
-    },
-  ],
 });
 
-/** 'Marker' to send position information for mounting the floating call card */
-export function VoiceChannelCallCardMount(props: { channel: Channel }) {
+/**
+ * Docked call card, rendered inline in the channel view's normal document
+ * flow (not an overlay) so it doesn't cover the message list. Shows a
+ * small click-to-join preview when not connected, or the full call view
+ * with a drag-to-resize handle when actively in this channel's call.
+ */
+export function DockedVoiceCallCard(props: { channel: Channel }) {
   const voice = useVoice();
   const state = useState();
-  const setInfo = useContext(callCardContext)!;
-  let ref: HTMLDivElement | undefined;
+  const setDockedChannelId = useContext(dockedChannelContext);
 
-  function updateInfo() {
-    const vc = voice.channel();
-    setInfo(
-      !vc || vc.id === props.channel.id
-        ? {
-            channel: props.channel,
-            pos: ref!.getBoundingClientRect(),
-            drawer: state.appDrawer()?.state,
-          }
-        : undefined,
-    );
-  }
+  const inCall = () => voice.channel()?.id === props.channel.id;
 
-  createEffect(updateInfo);
-
-  onMount(() => {
-    const target = ref?.parentElement;
-    if (!target) return;
-
-    createResizeObserver(target, updateInfo);
-  });
-  onCleanup(() => {
-    setInfo();
-  });
-
-  return <div ref={ref!} />;
-}
-
-/**
- * Call card
- */
-function VoiceCallCard(props: { channel: Channel }) {
-  const voice = useVoice();
-  const inCall = () => !!voice.channel();
+  onMount(() => setDockedChannelId?.(props.channel.id));
+  onCleanup(() => setDockedChannelId?.(undefined));
 
   let viewRef: HTMLDivElement | undefined;
 
@@ -278,10 +222,49 @@ function VoiceCallCard(props: { channel: Channel }) {
     });
   });
 
+  // Drag-to-resize handle
+  let resizePid = 0;
+  let resizeStartY = 0;
+  let resizeStartHeightVh = 0;
+  let resizeEvents: AbortController | null = null;
+
+  function resizeDown(e: PointerEvent) {
+    if (voice.fullscreen()) return;
+    resizePid = e.pointerId;
+    resizeStartY = e.clientY;
+    resizeStartHeightVh = state.voice.callCardHeightVh;
+    resizeEvents = new AbortController();
+    const opt = { passive: false, signal: resizeEvents.signal };
+    document.addEventListener("pointermove", resizeMove, opt);
+    document.addEventListener("pointerup", resizeUp, opt);
+  }
+
+  function resizeMove(e: PointerEvent) {
+    if (e.pointerId !== resizePid) return;
+    e.preventDefault();
+    const deltaVh = ((e.clientY - resizeStartY) / window.innerHeight) * 100;
+    state.voice.callCardHeightVh = resizeStartHeightVh + deltaVh;
+  }
+
+  function resizeUp(e: PointerEvent) {
+    if (e.pointerId !== resizePid) return;
+    resizeEvents?.abort();
+    resizeEvents = null;
+  }
+
+  onCleanup(() => resizeEvents?.abort());
+
   return (
     <Show when={voice.showCard(props.channel)}>
       <Base>
-        <Card ref={viewRef} active={inCall()}>
+        <Card
+          ref={viewRef}
+          active={inCall()}
+          fullscreen={voice.fullscreen()}
+          style={{
+            "--call-card-height": `${state.voice.callCardHeightVh}vh`,
+          }}
+        >
           <Show
             when={inCall()}
             fallback={<VoiceCallCardPreview channel={props.channel} />}
@@ -289,6 +272,9 @@ function VoiceCallCard(props: { channel: Channel }) {
             <VoiceCallCardActiveRoom />
           </Show>
         </Card>
+        <Show when={inCall() && !voice.fullscreen()}>
+          <ResizeHandle onPointerDown={resizeDown} />
+        </Show>
       </Base>
     </Show>
   );
@@ -296,28 +282,25 @@ function VoiceCallCard(props: { channel: Channel }) {
 
 const Base = styled("div", {
   base: {
-    left: 0,
-    top: "var(--gap-md)",
-    padding: "var(--gap-md)",
-
     width: "100%",
-    position: "absolute",
+    padding: "var(--gap-md)",
+    paddingBottom: 0,
 
-    zIndex: 2,
     userSelect: "none",
 
     display: "flex",
     alignItems: "center",
     flexDirection: "column",
+    flexShrink: 0,
   },
 });
 
 const Card = styled("div", {
   base: {
     pointerEvents: "all",
+    width: "100%",
 
-    maxWidth: "100%",
-    transition: "var(--transitions-fast) all",
+    transition: "var(--transitions-fast) background, border-radius",
     transitionTimingFunction: "ease-in-out",
 
     borderRadius: "var(--borderRadius-lg)",
@@ -326,17 +309,48 @@ const Card = styled("div", {
   variants: {
     active: {
       true: {
-        width: "100%",
-        height: "40vh",
+        height: "var(--call-card-height, 40vh)",
+        // Guard against the message list being squeezed to nothing on a
+        // short viewport - always leave room for at least a sliver of
+        // chat below, regardless of the persisted/dragged height.
+        maxHeight: "calc(100vh - 220px)",
       },
       false: {
-        width: "360px",
+        maxWidth: "360px",
         height: "120px",
         cursor: "pointer",
+      },
+    },
+    fullscreen: {
+      true: {
+        height: "100vh",
+        borderRadius: 0,
       },
     },
   },
   defaultVariants: {
     active: false,
+  },
+});
+
+const ResizeHandle = styled("div", {
+  base: {
+    width: "100%",
+    height: "var(--gap-md)",
+    flexShrink: 0,
+    cursor: "row-resize",
+    touchAction: "none",
+
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+
+    "&::after": {
+      content: '""',
+      width: "48px",
+      height: "4px",
+      borderRadius: "var(--borderRadius-full)",
+      background: "var(--md-sys-color-outline-variant)",
+    },
   },
 });
