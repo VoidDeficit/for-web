@@ -694,7 +694,50 @@ class Voice {
             }
           });
 
-          this.sound.playSound("streamStart");
+          const screenAudioTrack = room.localParticipant.getTrackPublication(
+            Track.Source.ScreenShareAudio,
+          );
+
+          // Pause the upstream while the settings modal is open, so
+          // nothing is actually broadcast until the user confirms - same
+          // behaviour as the old pre-share settings flow.
+          localTrack.pauseUpstream();
+          screenAudioTrack?.pauseUpstream();
+
+          this.openModal({
+            type: "screen_share_settings",
+            trackReference: {
+              participant: room.localParticipant,
+              publication: localTrack,
+              source: Track.Source.ScreenShare,
+            },
+            audio: !!screenAudioTrack,
+            onCancel: async () => {
+              await room.localParticipant.setScreenShareEnabled(false);
+              this.#setScreenshare(room.localParticipant.isScreenShareEnabled);
+            },
+            callback: async (resolution, frameRate, textMode, audio) => {
+              this.#settings.screenShareTextMode = textMode;
+              if (!textMode) {
+                this.#settings.screenShareResolution = resolution;
+                this.#settings.screenShareFrameRate = frameRate;
+              }
+              this.#settings.screenShareAudio = audio;
+
+              await this.applyCurrentScreenShareQuality();
+
+              if (!audio && screenAudioTrack?.track) {
+                room.localParticipant.unpublishTrack(screenAudioTrack.track);
+              }
+
+              localTrack.resumeUpstream();
+              if (audio) {
+                screenAudioTrack?.resumeUpstream();
+              }
+
+              this.sound.playSound("streamStart");
+            },
+          });
         }
       } catch (e) {
         this.onErr(e);

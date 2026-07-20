@@ -20,8 +20,14 @@ import {
 } from "stoat.js";
 import { ProtocolV1 } from "stoat.js/lib/events/v1";
 
+import { TrackReference } from "solid-livekit-components";
+
 import type { SettingsConfigurations } from "@revolt/app";
 import { CategoryData } from "@revolt/app/menus/CategoryContextMenu";
+import {
+  ScreenShareFrameRate,
+  ScreenShareResolution,
+} from "@revolt/state/stores/Voice";
 
 import type { ChangelogResponse } from "./modals/Changelog";
 
@@ -324,5 +330,18 @@ export type Modals =
         isFullScreen: boolean;
         image?: string;
       }[];
+      onCancel: () => void;
+    }
+  | {
+      type: "screen_share_settings";
+      trackReference: TrackReference;
+      /** Whether the captured stream actually came with an audio track */
+      audio: boolean;
+      callback: (
+        resolution: ScreenShareResolution,
+        frameRate: ScreenShareFrameRate,
+        textMode: boolean,
+        audio: boolean,
+      ) => void;
       onCancel: () => void;
     };
