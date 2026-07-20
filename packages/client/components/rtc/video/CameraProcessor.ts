@@ -12,16 +12,31 @@ import type {
  * self-hosting overrides configured via VITE_CAMERA_SEGMENTER_*_URL - if
  * unset, @livekit/track-processors falls back to its own CDN defaults
  * (jsDelivr for the WASM fileset, Google's hosted model).
+ *
+ * @livekit/track-processors only falls through to its CDN default when
+ * the option key is missing/undefined, not when it's an empty string -
+ * so an unset override must actively omit the key here, not just set it
+ * to "". This can't be written as a plain `if (CONFIGURATION.X) {...}`
+ * though: Vite inlines CONFIGURATION.X (built from
+ * import.meta.env.VITE_X) as a build-time constant, and since this repo
+ * builds with literal placeholder strings like "__VITE_X__" for runtime
+ * injection (see docker/inject.js), that placeholder is always truthy at
+ * build time - dead-code elimination then either strips the branch
+ * entirely or folds it to "always assign", silently breaking the runtime
+ * substitution this depends on. Routing the value through a helper Vite
+ * can't statically evaluate keeps the check live until actual runtime.
  */
+function undefinedIfBlank(value: string): string | undefined {
+  return value.length > 0 ? value : undefined;
+}
+
 function assetPaths() {
-  const paths: { tasksVisionFileSet?: string; modelAssetPath?: string } = {};
-  if (CONFIGURATION.CAMERA_SEGMENTER_WASM_URL) {
-    paths.tasksVisionFileSet = CONFIGURATION.CAMERA_SEGMENTER_WASM_URL;
-  }
-  if (CONFIGURATION.CAMERA_SEGMENTER_MODEL_URL) {
-    paths.modelAssetPath = CONFIGURATION.CAMERA_SEGMENTER_MODEL_URL;
-  }
-  return paths;
+  return {
+    tasksVisionFileSet: undefinedIfBlank(
+      CONFIGURATION.CAMERA_SEGMENTER_WASM_URL,
+    ),
+    modelAssetPath: undefinedIfBlank(CONFIGURATION.CAMERA_SEGMENTER_MODEL_URL),
+  };
 }
 
 function presetImagePath(preset: CameraBackgroundPreset) {
