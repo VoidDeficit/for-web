@@ -1525,6 +1525,10 @@ msgstr "Friends"
 msgid "Fruit Salad"
 msgstr "Fruit Salad"
 
+#: components/app/interface/settings/user/voice/VoiceInputOptions.tsx
+msgid "Gate Threshold"
+msgstr "Gate Threshold"
+
 #: components/app/interface/settings/user/bots/ViewBot.tsx
 msgid "Generate a new token if it gets lost or compromised"
 msgstr "Generate a new token if it gets lost or compromised"
@@ -1694,6 +1698,10 @@ msgstr "Impersonation"
 #: src/AndroidNag.tsx
 msgid "In the meantime, install Stoat from Google Play for a faster, smoother experience designed for Android."
 msgstr "In the meantime, install Stoat from Google Play for a faster, smoother experience designed for Android."
+
+#: components/app/interface/settings/user/voice/VoiceInputOptions.tsx
+msgid "Input Volume"
+msgstr "Input Volume"
 
 #: components/app/interface/settings/user/Native.tsx
 msgid "Instead of closing, Stoat will hide in your tray."
@@ -2186,6 +2194,10 @@ msgstr "No permissions set yet"
 #: src/interface/Friends.tsx
 msgid "Nobody here right now!"
 msgstr "Nobody here right now!"
+
+#: components/app/interface/settings/user/voice/VoiceInputOptions.tsx
+msgid "Noise Gate"
+msgstr "Noise Gate"
 
 #: components/app/menus/ServerContextMenu.tsx
 #: components/app/menus/shared/NotificationContextMenu.tsx
@@ -3079,6 +3091,14 @@ msgstr "System"
 #: components/app/interface/settings/server/Overview.tsx
 msgid "System message channels"
 msgstr "System message channels"
+
+#: components/app/interface/settings/user/voice/VoiceInputOptions.tsx
+msgid "Target Level"
+msgstr "Target Level"
+
+#: components/app/interface/settings/user/voice/VoiceInputOptions.tsx
+msgid "Target Volume"
+msgstr "Target Volume"
 
 #: components/modal/modals/ReportContent.tsx
 msgid "Tell us what's wrong with this message"

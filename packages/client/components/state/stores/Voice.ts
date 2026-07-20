@@ -47,6 +47,11 @@ export interface TypeVoice {
   noiseSupression: NoiseSuppresionState;
   autoGainControl: boolean;
 
+  micGateEnabled: boolean;
+  micGateThresholdDb: number;
+  micAgcEnabled: boolean;
+  micAgcTargetDb: number;
+
   screenShareResolution: ScreenShareResolution;
   screenShareFrameRate: ScreenShareFrameRate;
   screenShareTextMode: boolean;
@@ -91,6 +96,10 @@ export class Voice extends AbstractStore<"voice", TypeVoice> {
       echoCancellation: true,
       noiseSupression: "browser",
       autoGainControl: true,
+      micGateEnabled: false,
+      micGateThresholdDb: -50,
+      micAgcEnabled: false,
+      micAgcTargetDb: -18,
       screenShareResolution: "720p",
       screenShareFrameRate: 30,
       screenShareTextMode: false,
@@ -142,6 +151,25 @@ export class Voice extends AbstractStore<"voice", TypeVoice> {
 
     if (typeof input.autoGainControl === "boolean") {
       data.autoGainControl = input.autoGainControl;
+    }
+
+    if (typeof input.micGateEnabled === "boolean") {
+      data.micGateEnabled = input.micGateEnabled;
+    }
+
+    if (typeof input.micGateThresholdDb === "number") {
+      data.micGateThresholdDb = Math.min(
+        0,
+        Math.max(-60, input.micGateThresholdDb),
+      );
+    }
+
+    if (typeof input.micAgcEnabled === "boolean") {
+      data.micAgcEnabled = input.micAgcEnabled;
+    }
+
+    if (typeof input.micAgcTargetDb === "number") {
+      data.micAgcTargetDb = Math.min(-6, Math.max(-30, input.micAgcTargetDb));
     }
 
     if (
@@ -334,6 +362,34 @@ export class Voice extends AbstractStore<"voice", TypeVoice> {
   }
 
   /**
+   * Set whether the mic noise gate is enabled
+   */
+  set micGateEnabled(value: boolean) {
+    this.set("micGateEnabled", value);
+  }
+
+  /**
+   * Set the mic noise gate threshold (dBFS, -60 to 0)
+   */
+  set micGateThresholdDb(value: number) {
+    this.set("micGateThresholdDb", Math.min(0, Math.max(-60, value)));
+  }
+
+  /**
+   * Set whether the mic target-volume AGC is enabled
+   */
+  set micAgcEnabled(value: boolean) {
+    this.set("micAgcEnabled", value);
+  }
+
+  /**
+   * Set the mic target-volume AGC target loudness (dBFS, -30 to -6)
+   */
+  set micAgcTargetDb(value: number) {
+    this.set("micAgcTargetDb", Math.min(-6, Math.max(-30, value)));
+  }
+
+  /**
    * Set screen share resolution
    */
   set screenShareResolution(value: ScreenShareResolution) {
@@ -430,6 +486,34 @@ export class Voice extends AbstractStore<"voice", TypeVoice> {
    */
   get autoGainControl(): boolean | undefined {
     return this.get().autoGainControl;
+  }
+
+  /**
+   * Get whether the mic noise gate is enabled
+   */
+  get micGateEnabled(): boolean {
+    return this.get().micGateEnabled;
+  }
+
+  /**
+   * Get the mic noise gate threshold (dBFS)
+   */
+  get micGateThresholdDb(): number {
+    return this.get().micGateThresholdDb;
+  }
+
+  /**
+   * Get whether the mic target-volume AGC is enabled
+   */
+  get micAgcEnabled(): boolean {
+    return this.get().micAgcEnabled;
+  }
+
+  /**
+   * Get the mic target-volume AGC target loudness (dBFS)
+   */
+  get micAgcTargetDb(): number {
+    return this.get().micAgcTargetDb;
   }
 
   /**

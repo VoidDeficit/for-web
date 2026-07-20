@@ -42,4 +42,19 @@ export default defineConfig([
       "prettier/prettier": ["warn"],
     },
   },
+  {
+    // Runs in AudioWorkletGlobalScope (no DOM access), a separate global
+    // scope not covered by the browser env - served as a static asset,
+    // not processed by the TS/bundler pipeline like normal app code.
+    files: ["**/public/audio/MicWorklet.js"],
+    languageOptions: {
+      globals: {
+        AudioWorkletProcessor: "readonly",
+        registerProcessor: "readonly",
+        sampleRate: "readonly",
+        currentFrame: "readonly",
+        currentTime: "readonly",
+      },
+    },
+  },
 ]);

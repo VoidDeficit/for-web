@@ -1509,6 +1509,10 @@ msgstr ""
 msgid "Fruit Salad"
 msgstr ""
 
+#: components/app/interface/settings/user/voice/VoiceInputOptions.tsx
+msgid "Gate Threshold"
+msgstr ""
+
 #: components/app/interface/settings/user/bots/ViewBot.tsx
 msgid "Generate a new token if it gets lost or compromised"
 msgstr ""
@@ -1672,6 +1676,10 @@ msgstr ""
 
 #: src/AndroidNag.tsx
 msgid "In the meantime, install Stoat from Google Play for a faster, smoother experience designed for Android."
+msgstr ""
+
+#: components/app/interface/settings/user/voice/VoiceInputOptions.tsx
+msgid "Input Volume"
 msgstr ""
 
 #: components/app/interface/settings/user/Native.tsx
@@ -2160,6 +2168,10 @@ msgstr ""
 
 #: src/interface/Friends.tsx
 msgid "Nobody here right now!"
+msgstr ""
+
+#: components/app/interface/settings/user/voice/VoiceInputOptions.tsx
+msgid "Noise Gate"
 msgstr ""
 
 #: components/app/menus/ServerContextMenu.tsx
@@ -3037,6 +3049,14 @@ msgstr ""
 
 #: components/app/interface/settings/server/Overview.tsx
 msgid "System message channels"
+msgstr ""
+
+#: components/app/interface/settings/user/voice/VoiceInputOptions.tsx
+msgid "Target Level"
+msgstr ""
+
+#: components/app/interface/settings/user/voice/VoiceInputOptions.tsx
+msgid "Target Volume"
 msgstr ""
 
 #: components/modal/modals/ReportContent.tsx

@@ -4,10 +4,12 @@ import { useMediaDeviceSelect } from "solid-livekit-components";
 import { Trans } from "@lingui-solid/solid/macro";
 
 import { CONFIGURATION } from "@revolt/common";
+import { useVoice } from "@revolt/rtc";
 import { useState } from "@revolt/state";
 import {
   CategoryButton,
   CategorySelectOption,
+  Checkbox,
   Column,
   Slider,
   Text,
@@ -103,13 +105,29 @@ function SelectInput(props: { kind: MediaDeviceKind }) {
 }
 
 /**
- * Select volume
+ * Select volume, and configure noise gate / target-volume AGC
  */
 function VolumeSliders() {
   const state = useState();
+  const voice = useVoice();
 
   return (
     <Column>
+      <Text class="label">
+        <Trans>Input Volume</Trans>
+      </Text>
+      <Slider
+        min={0}
+        max={3}
+        step={0.1}
+        value={state.voice.inputVolume}
+        onInput={(event) => {
+          state.voice.inputVolume = event.currentTarget.value;
+          voice.updateMicProcessing();
+        }}
+        labelFormatter={(label) => (label * 100).toFixed(0) + "%"}
+      />
+
       <Text class="label">
         <Trans>Output Volume</Trans>
       </Text>
@@ -123,6 +141,60 @@ function VolumeSliders() {
         }
         labelFormatter={(label) => (label * 100).toFixed(0) + "%"}
       />
+
+      <CategoryButton
+        icon="blank"
+        action={<Checkbox checked={state.voice.micGateEnabled} />}
+        onClick={() => {
+          state.voice.micGateEnabled = !state.voice.micGateEnabled;
+          voice.updateMicProcessing();
+        }}
+      >
+        <Trans>Noise Gate</Trans>
+      </CategoryButton>
+      <Show when={state.voice.micGateEnabled}>
+        <Text class="label">
+          <Trans>Gate Threshold</Trans>
+        </Text>
+        <Slider
+          min={-60}
+          max={0}
+          step={1}
+          value={state.voice.micGateThresholdDb}
+          onInput={(event) => {
+            state.voice.micGateThresholdDb = event.currentTarget.value;
+            voice.updateMicProcessing();
+          }}
+          labelFormatter={(label) => `${label} dB`}
+        />
+      </Show>
+
+      <CategoryButton
+        icon="blank"
+        action={<Checkbox checked={state.voice.micAgcEnabled} />}
+        onClick={() => {
+          state.voice.micAgcEnabled = !state.voice.micAgcEnabled;
+          voice.updateMicProcessing();
+        }}
+      >
+        <Trans>Target Volume</Trans>
+      </CategoryButton>
+      <Show when={state.voice.micAgcEnabled}>
+        <Text class="label">
+          <Trans>Target Level</Trans>
+        </Text>
+        <Slider
+          min={-30}
+          max={-6}
+          step={1}
+          value={state.voice.micAgcTargetDb}
+          onInput={(event) => {
+            state.voice.micAgcTargetDb = event.currentTarget.value;
+            voice.updateMicProcessing();
+          }}
+          labelFormatter={(label) => `${label} dB`}
+        />
+      </Show>
     </Column>
   );
 }

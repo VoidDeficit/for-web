@@ -15,7 +15,6 @@ import {
 
 import type { TrackPublishOptions } from "livekit-client";
 import { Room, Track, VideoEncoding, VideoResolution } from "livekit-client";
-import { DenoiseTrackProcessor } from "livekit-rnnoise-processor";
 import { Channel } from "stoat.js";
 
 import { SoundController, useClient, useSound } from "@revolt/client";
@@ -29,6 +28,7 @@ import {
 } from "@revolt/state/stores/Voice";
 import { VoiceCallCardContext } from "@revolt/ui/components/features/voice/callCard/VoiceCallCard";
 
+import { MicProcessor } from "./audio/MicProcessor";
 import { InRoom } from "./components/InRoom";
 import { RoomAudioManager } from "./components/RoomAudioManager";
 
@@ -109,6 +109,7 @@ class Voice {
   private openModal;
   private getClient;
   private screenShareTracks: Set<string>;
+  private micProcessor?: MicProcessor;
 
   constructor(
     voiceSettings: VoiceSettings,
@@ -203,12 +204,11 @@ class Voice {
           .setMicrophoneEnabled(this.#settings.micOn)
           .then((track) => {
             this.#settings.micOn = track != null;
-            if (this.#settings.noiseSupression === "enhanced") {
-              track?.audioTrack?.setProcessor(
-                new DenoiseTrackProcessor({
-                  workletCDNURL: CONFIGURATION.RNNOISE_WORKLET_CDN_URL,
-                }),
+            if (track?.audioTrack) {
+              this.micProcessor = new MicProcessor(
+                this.buildMicProcessorOptions(),
               );
+              track.audioTrack.setProcessor(this.micProcessor);
             }
           });
       for (const p of room.remoteParticipants.values()) {
@@ -291,6 +291,7 @@ class Voice {
       });
 
       this.screenShareTracks = new Set();
+      this.micProcessor = undefined;
 
       this.sound.playSound("userLeaveVoice");
     } catch (e) {
@@ -342,6 +343,45 @@ class Voice {
       }
     } catch (e) {
       this.onErr(e);
+    }
+  }
+
+  private buildMicProcessorOptions() {
+    return {
+      gain: this.#settings.inputVolume,
+      noiseSuppressionEnabled: this.#settings.noiseSupression === "enhanced",
+      workletCDNURL: CONFIGURATION.RNNOISE_WORKLET_CDN_URL,
+      gateEnabled: this.#settings.micGateEnabled,
+      gateThresholdDb: this.#settings.micGateThresholdDb,
+      agcEnabled: this.#settings.micAgcEnabled,
+      agcTargetDb: this.#settings.micAgcTargetDb,
+    };
+  }
+
+  /**
+   * Re-apply mic processing settings (gain, noise gate, target-volume
+   * AGC, noise suppression) to the active mic track, if connected.
+   * Gain/gate/AGC update live on the existing processor; toggling noise
+   * suppression instead swaps in a freshly built processor, since that
+   * changes which audio nodes are connected and LiveKit's setProcessor
+   * expects a new processor instance to switch to (re-calling init() on
+   * an already-built instance would leak/duplicate its internal nodes).
+   */
+  updateMicProcessing() {
+    if (!this.micProcessor) return;
+
+    const opts = this.buildMicProcessorOptions();
+    const audioTrack = this.room()?.localParticipant.getTrackPublication(
+      Track.Source.Microphone,
+    )?.audioTrack;
+
+    if (
+      this.micProcessor.noiseSuppressionEnabled !== opts.noiseSuppressionEnabled
+    ) {
+      this.micProcessor = new MicProcessor(opts);
+      audioTrack?.setProcessor(this.micProcessor);
+    } else {
+      this.micProcessor.updateParams(opts);
     }
   }
 
