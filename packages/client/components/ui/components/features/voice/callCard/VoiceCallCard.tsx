@@ -43,9 +43,9 @@ export function VoiceCallCardContext(props: { children: JSX.Element }) {
   const [dockedChannelId, setDockedChannelId] = createSignal<string>();
   const [float, setFloat] = createSignal<FloatType>("tr");
   const [moving, setMoving] = createSignal(false);
+  const [ref, setRef] = createSignal<HTMLDivElement>();
 
-  let ref: HTMLDivElement | undefined,
-    events: AbortController | null,
+  let events: AbortController | null,
     pid = 0,
     ofsX = 0,
     ofsY = 0;
@@ -58,8 +58,10 @@ export function VoiceCallCardContext(props: { children: JSX.Element }) {
   };
 
   function mouseDown(e: PointerEvent) {
+    const el = ref();
+    if (!el) return;
     pid = e.pointerId;
-    const pos = ref!.getBoundingClientRect();
+    const pos = el.getBoundingClientRect();
     ofsX = e.clientX - pos.x;
     ofsY = e.clientY - pos.y;
     setMoving(true);
@@ -67,17 +69,19 @@ export function VoiceCallCardContext(props: { children: JSX.Element }) {
   }
 
   function mouseMove(e: PointerEvent) {
-    if (e.pointerId !== pid) return;
+    const el = ref();
+    if (!el || e.pointerId !== pid) return;
     e.preventDefault();
     const x = e.clientX - ofsX,
       y = e.clientY - ofsY;
-    ref!.style.transform = `translate(${x}px, ${y}px)`;
+    el.style.transform = `translate(${x}px, ${y}px)`;
   }
 
   function mouseUp(e: PointerEvent) {
-    if (e.pointerId !== pid) return;
-    const sty = ref!.style,
-      pos = ref!.getBoundingClientRect(),
+    const el = ref();
+    if (!el || e.pointerId !== pid) return;
+    const sty = el.style,
+      pos = el.getBoundingClientRect(),
       left = e.clientX - ofsX + pos.width / 2 < innerWidth / 2,
       top = e.clientY - ofsY + pos.height / 2 < innerHeight / 2;
 
@@ -103,9 +107,10 @@ export function VoiceCallCardContext(props: { children: JSX.Element }) {
   }
 
   createEffect(() => {
-    if (!ref) return;
+    const el = ref();
+    if (!el) return;
     const f = float();
-    const sty = ref.style,
+    const sty = el.style,
       x = f[1] === "l" ? PAD_X : `calc(100vw - var(--flt-w) - ${PAD_X})`,
       y = f[0] === "t" ? PAD_Y : `calc(100vh - var(--flt-h) - ${PAD_Y})`;
     sty.transform = `translate(${x}, ${y})`;
@@ -118,7 +123,7 @@ export function VoiceCallCardContext(props: { children: JSX.Element }) {
       {props.children}
       <Show when={showPiP()}>
         <Portal ref={document.getElementById("floating")! as HTMLDivElement}>
-          <Float ref={ref} moving={moving()} onPointerDown={mouseDown}>
+          <Float ref={setRef} moving={moving()} onPointerDown={mouseDown}>
             <VoiceCallCardPiP />
           </Float>
         </Portal>

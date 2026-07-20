@@ -2196,6 +2196,10 @@ msgstr ""
 msgid "Not of minimum age to use the platform"
 msgstr ""
 
+#: components/app/menus/CameraEffectsMenu.tsx
+msgid "Not supported by this browser"
+msgstr ""
+
 #: components/app/menus/ServerContextMenu.tsx
 #: components/app/menus/shared/NotificationContextMenu.tsx
 #: components/app/interface/settings/UserSettings.tsx

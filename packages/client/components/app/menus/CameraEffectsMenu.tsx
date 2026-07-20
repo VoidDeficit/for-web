@@ -1,10 +1,13 @@
-import { createMemo, For } from "solid-js";
+import { createMemo, For, Show } from "solid-js";
 
 import { Trans } from "@lingui-solid/solid/macro";
+import { styled } from "styled-system/jsx";
 
 import { useVoice } from "@revolt/rtc";
+import { cameraEffectsSupported } from "@revolt/rtc/video/CameraProcessor";
 import { useState } from "@revolt/state";
 import { CameraBackgroundPresets } from "@revolt/state/stores/Voice";
+import { Text } from "@revolt/ui";
 
 import MdBlock from "@material-symbols/svg-400/outlined/block.svg?component-solid";
 import MdBlurOn from "@material-symbols/svg-400/outlined/blur_on.svg?component-solid";
@@ -25,6 +28,12 @@ const PRESET_LABELS: Record<(typeof CameraBackgroundPresets)[number], string> =
     forest: "Forest",
   };
 
+const MenuLabel = styled("div", {
+  base: {
+    padding: "var(--gap-sm) var(--gap-lg)",
+  },
+});
+
 /**
  * Right-click menu on the camera button: background blur or a virtual
  * background image, similar to Discord/Zoom's camera effects. Applies
@@ -35,9 +44,18 @@ export function CameraEffectsMenu() {
   const { voice: settings } = useState();
 
   const mode = createMemo(() => settings.cameraBackgroundMode);
+  const supported = cameraEffectsSupported();
 
   return (
     <ContextMenu class="CameraEffectsMenu">
+      <Show when={!supported}>
+        <MenuLabel>
+          <Text class="label">
+            <Trans>Not supported by this browser</Trans>
+          </Text>
+        </MenuLabel>
+        <ContextMenuDivider />
+      </Show>
       <ContextMenuButton
         symbol={MdBlock}
         onClick={() => voice.setCameraBackground("none")}
@@ -48,33 +66,35 @@ export function CameraEffectsMenu() {
         <Trans>No Effect</Trans>
       </ContextMenuButton>
 
-      <ContextMenuButton
-        symbol={MdBlurOn}
-        onClick={() => voice.setCameraBackground("blur")}
-        actionSymbol={
-          mode() === "blur" ? MdRadioButtonChecked : MdRadioButtonUnchecked
-        }
-      >
-        <Trans>Blur Background</Trans>
-      </ContextMenuButton>
+      <Show when={supported}>
+        <ContextMenuButton
+          symbol={MdBlurOn}
+          onClick={() => voice.setCameraBackground("blur")}
+          actionSymbol={
+            mode() === "blur" ? MdRadioButtonChecked : MdRadioButtonUnchecked
+          }
+        >
+          <Trans>Blur Background</Trans>
+        </ContextMenuButton>
 
-      <ContextMenuDivider />
+        <ContextMenuDivider />
 
-      <For each={CameraBackgroundPresets}>
-        {(preset) => (
-          <ContextMenuButton
-            symbol={MdWallpaper}
-            onClick={() => voice.setCameraBackground("image", { preset })}
-            actionSymbol={
-              mode() === "image" && settings.cameraBackgroundPreset === preset
-                ? MdRadioButtonChecked
-                : MdRadioButtonUnchecked
-            }
-          >
-            {PRESET_LABELS[preset]}
-          </ContextMenuButton>
-        )}
-      </For>
+        <For each={CameraBackgroundPresets}>
+          {(preset) => (
+            <ContextMenuButton
+              symbol={MdWallpaper}
+              onClick={() => voice.setCameraBackground("image", { preset })}
+              actionSymbol={
+                mode() === "image" && settings.cameraBackgroundPreset === preset
+                  ? MdRadioButtonChecked
+                  : MdRadioButtonUnchecked
+              }
+            >
+              {PRESET_LABELS[preset]}
+            </ContextMenuButton>
+          )}
+        </For>
+      </Show>
     </ContextMenu>
   );
 }

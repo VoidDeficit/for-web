@@ -418,13 +418,13 @@ class Voice {
     if (!videoTrack) return;
 
     if (this.cameraProcessor) {
-      await switchCameraProcessor(
+      const switched = await switchCameraProcessor(
         this.cameraProcessor,
         this.#settings.cameraBackgroundMode,
         this.#settings.cameraBlurRadius,
         this.#settings.cameraBackgroundPreset,
       );
-      if (mode === "none") {
+      if (mode === "none" || !switched) {
         this.cameraProcessor = undefined;
       }
     } else if (mode !== "none") {
@@ -434,7 +434,12 @@ class Voice {
         this.#settings.cameraBackgroundPreset,
       );
       if (this.cameraProcessor) {
-        await videoTrack.setProcessor(this.cameraProcessor);
+        try {
+          await videoTrack.setProcessor(this.cameraProcessor);
+        } catch (e) {
+          console.warn("Failed to attach camera background processor", e);
+          this.cameraProcessor = undefined;
+        }
       }
     }
   }
@@ -454,7 +459,15 @@ class Voice {
           this.#settings.cameraBackgroundPreset,
         );
         if (this.cameraProcessor) {
-          await publication.videoTrack.setProcessor(this.cameraProcessor);
+          try {
+            await publication.videoTrack.setProcessor(this.cameraProcessor);
+          } catch (e) {
+            // The camera itself is already live at this point - a failed
+            // background effect shouldn't be treated as a camera failure,
+            // just fall back to the plain feed.
+            console.warn("Failed to attach camera background processor", e);
+            this.cameraProcessor = undefined;
+          }
         }
       } else if (!enabling) {
         this.cameraProcessor = undefined;
