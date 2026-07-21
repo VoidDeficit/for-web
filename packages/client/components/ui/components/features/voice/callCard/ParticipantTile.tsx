@@ -1,4 +1,4 @@
-import { createMemo, createSignal, For, Show } from "solid-js";
+import { createMemo, createSignal, Show } from "solid-js";
 import {
   TrackReference,
   useEnsureParticipant,
@@ -159,6 +159,17 @@ export function ParticipantTile(props: TileProps) {
         }}
         style={{ ...getHeight() }}
       >
+        <Show when={isScreenShare() && watcherUsers().length}>
+          <ViewerBadge
+            onClick={(e) => e.stopPropagation()}
+            use:floating={{
+              contextMenu: () => <ViewersMenu userIds={watchers()} />,
+            }}
+          >
+            <Symbol size={16}>visibility</Symbol>
+            <span>{watcherUsers().length}</span>
+          </ViewerBadge>
+        </Show>
         <Show
           when={(isVideo() || isScreenShare()) && isWatching()}
           fallback={
@@ -217,35 +228,6 @@ export function ParticipantTile(props: TileProps) {
           <OverlayInner>
             <OverflowingText>{user().username}</OverflowingText>
             <Row gap="md">
-              <Show when={isScreenShare()}>
-                <Show when={watcherUsers().length}>
-                  <ViewerList
-                    onClick={(e) => e.stopPropagation()}
-                    use:floating={{
-                      contextMenu: () => <ViewersMenu userIds={watchers()} />,
-                      contextMenuHandler: "click",
-                    }}
-                  >
-                    <For each={watcherUsers().slice(0, 5)}>
-                      {(watcher) => (
-                        <ViewerAvatar>
-                          <Avatar
-                            src={watcher?.avatar}
-                            fallback={watcher?.username ?? "?"}
-                            size={20}
-                            interactive={false}
-                          />
-                        </ViewerAvatar>
-                      )}
-                    </For>
-                    <Show when={watcherUsers().length > 5}>
-                      <OverflowingText>
-                        +{watcherUsers().length - 5}
-                      </OverflowingText>
-                    </Show>
-                  </ViewerList>
-                </Show>
-              </Show>
               {isScreenShare() ? (
                 <Show when={isScreenShareAudioUserMuted()}>
                   <Symbol
@@ -296,6 +278,7 @@ export function ParticipantTile(props: TileProps) {
 
 export const tile = cva({
   base: {
+    position: "relative",
     display: "grid",
     aspectRatio: "16/9",
     transition: "all .3s ease, width 0s, height 0s",
@@ -377,24 +360,24 @@ const WatchButtonHolder = styled("div", {
   },
 });
 
-const ViewerList = styled("div", {
+const ViewerBadge = styled("div", {
   base: {
+    position: "absolute",
+    top: "var(--gap-md)",
+    right: "var(--gap-lg)",
+    zIndex: 1,
+
     display: "flex",
     alignItems: "center",
-    flexDirection: "row",
-    cursor: "pointer",
-  },
-});
+    gap: "var(--gap-xs)",
 
-const ViewerAvatar = styled("div", {
-  base: {
-    marginInlineStart: "calc(var(--gap-sm) * -1)",
+    padding: "var(--gap-xs) var(--gap-sm)",
     borderRadius: "var(--borderRadius-full)",
-    outline: "2px solid var(--md-sys-color-surface-container)",
+    background: "color-mix(in srgb, black 55%, transparent)",
+    color: "white",
+    fontSize: "0.8em",
 
-    _firstOfType: {
-      marginInlineStart: 0,
-    },
+    cursor: "pointer",
   },
 });
 
