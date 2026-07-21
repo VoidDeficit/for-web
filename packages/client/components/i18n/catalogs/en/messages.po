@@ -471,6 +471,10 @@ msgstr "Assign lower-ranked roles to lower-ranking members"
 msgid "Assign Roles"
 msgstr "Assign Roles"
 
+#: components/app/menus/StreamStatsMenu.tsx
+msgid "Audio"
+msgstr "Audio"
+
 #: components/modal/modals/ScreenShareSettings.tsx
 msgid "Audio disabled by browser"
 msgstr "Audio disabled by browser"
@@ -544,6 +548,7 @@ msgstr "Banner"
 msgid "Bans"
 msgstr "Bans"
 
+#: components/app/menus/StreamStatsMenu.tsx
 #: components/app/menus/StreamStatsMenu.tsx
 msgid "Bitrate"
 msgstr "Bitrate"
@@ -1288,6 +1293,10 @@ msgstr "Donated to Stoat"
 msgid "Done"
 msgstr "Done"
 
+#: components/app/menus/StreamStatsMenu.tsx
+msgid "Dropouts"
+msgstr "Dropouts"
+
 #: components/modal/modals/ReportContent.tsx
 msgid "Drugs or illegal goods"
 msgstr "Drugs or illegal goods"
@@ -1762,6 +1771,7 @@ msgstr "irrelevant joke badge 2"
 msgid "ISO Standard (YYYY-MM-DD)"
 msgstr "ISO Standard (YYYY-MM-DD)"
 
+#: components/app/menus/StreamStatsMenu.tsx
 #: components/app/menus/StreamStatsMenu.tsx
 msgid "Jitter"
 msgstr "Jitter"
@@ -2339,6 +2349,7 @@ msgid "Overview"
 msgstr "Overview"
 
 #: components/app/menus/StreamStatsMenu.tsx
+#: components/app/menus/StreamStatsMenu.tsx
 msgid "Packets lost"
 msgstr "Packets lost"
 
@@ -2691,6 +2702,7 @@ msgstr "Role Name"
 msgid "Roles"
 msgstr "Roles"
 
+#: components/app/menus/StreamStatsMenu.tsx
 #: components/app/menus/StreamStatsMenu.tsx
 msgid "Round trip"
 msgstr "Round trip"

@@ -463,6 +463,10 @@ msgstr ""
 msgid "Assign Roles"
 msgstr ""
 
+#: components/app/menus/StreamStatsMenu.tsx
+msgid "Audio"
+msgstr ""
+
 #: components/modal/modals/ScreenShareSettings.tsx
 msgid "Audio disabled by browser"
 msgstr ""
@@ -536,6 +540,7 @@ msgstr ""
 msgid "Bans"
 msgstr ""
 
+#: components/app/menus/StreamStatsMenu.tsx
 #: components/app/menus/StreamStatsMenu.tsx
 msgid "Bitrate"
 msgstr ""
@@ -1272,6 +1277,10 @@ msgstr ""
 msgid "Done"
 msgstr ""
 
+#: components/app/menus/StreamStatsMenu.tsx
+msgid "Dropouts"
+msgstr ""
+
 #: components/modal/modals/ReportContent.tsx
 msgid "Drugs or illegal goods"
 msgstr ""
@@ -1741,6 +1750,7 @@ msgstr ""
 msgid "ISO Standard (YYYY-MM-DD)"
 msgstr ""
 
+#: components/app/menus/StreamStatsMenu.tsx
 #: components/app/menus/StreamStatsMenu.tsx
 msgid "Jitter"
 msgstr ""
@@ -2314,6 +2324,7 @@ msgid "Overview"
 msgstr ""
 
 #: components/app/menus/StreamStatsMenu.tsx
+#: components/app/menus/StreamStatsMenu.tsx
 msgid "Packets lost"
 msgstr ""
 
@@ -2662,6 +2673,7 @@ msgstr ""
 msgid "Roles"
 msgstr ""
 
+#: components/app/menus/StreamStatsMenu.tsx
 #: components/app/menus/StreamStatsMenu.tsx
 msgid "Round trip"
 msgstr ""
