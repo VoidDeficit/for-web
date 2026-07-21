@@ -925,6 +925,33 @@ class Voice {
     return this.watchedTracks().has(trackSid);
   }
 
+  /** Find a remote screen share publication by track SID across all participants. */
+  private findRemotePublication(
+    trackSid: string,
+  ): RemoteTrackPublication | undefined {
+    const room = this.room();
+    if (!room) return undefined;
+
+    for (const p of room.remoteParticipants.values()) {
+      const pub = p.getTrackPublication(Track.Source.ScreenShare);
+      if (pub instanceof RemoteTrackPublication && pub.trackSid === trackSid) {
+        return pub;
+      }
+    }
+
+    return undefined;
+  }
+
+  watchTrackBySid(trackSid: string) {
+    const pub = this.findRemotePublication(trackSid);
+    if (pub) this.watchTrack(pub);
+  }
+
+  unwatchTrackBySid(trackSid: string) {
+    const pub = this.findRemotePublication(trackSid);
+    if (pub) this.unwatchTrack(pub);
+  }
+
   /**
    * Live list of user IDs currently watching a given screen share track,
    * derived from every remote participant's synced attributes plus our own

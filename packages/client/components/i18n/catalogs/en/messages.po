@@ -3046,6 +3046,7 @@ msgid "Stop Streaming"
 msgstr "Stop Streaming"
 
 #: components/ui/components/features/voice/callCard/ParticipantTile.tsx
+#: components/app/menus/WatchStreamMenu.tsx
 msgid "Stop Watching"
 msgstr "Stop Watching"
 
@@ -3529,8 +3530,13 @@ msgid "Want to change username?"
 msgstr "Want to change username?"
 
 #: components/ui/components/features/voice/callCard/ParticipantTile.tsx
+#: components/app/menus/WatchStreamMenu.tsx
 msgid "Watch Stream"
 msgstr "Watch Stream"
+
+#: components/app/menus/ViewersMenu.tsx
+msgid "Watching now"
+msgstr "Watching now"
 
 #: src/AndroidNag.tsx
 msgid "We are working hard on optimising our web app for mobile."

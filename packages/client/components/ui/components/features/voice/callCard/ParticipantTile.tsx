@@ -14,7 +14,12 @@ import { styled } from "styled-system/jsx";
 
 import { useLingui } from "@lingui-solid/solid/macro";
 
-import { StreamStatsMenu, UserContextMenu } from "@revolt/app";
+import {
+  StreamStatsMenu,
+  UserContextMenu,
+  ViewersMenu,
+  WatchStreamMenu,
+} from "@revolt/app";
 import { useUser, useUsers } from "@revolt/markdown/users";
 import { useVoice } from "@revolt/rtc";
 import { useState } from "@revolt/state";
@@ -139,6 +144,9 @@ export function ParticipantTile(props: TileProps) {
           //   },
           contextMenu: () => (
             <>
+              <Show when={isRemoteScreenShare() && track.publication?.trackSid}>
+                <WatchStreamMenu trackSid={track.publication!.trackSid} />
+              </Show>
               <StreamStatsMenu track={track} />
               <UserContextMenu
                 user={user().user!}
@@ -211,7 +219,13 @@ export function ParticipantTile(props: TileProps) {
             <Row gap="md">
               <Show when={isScreenShare()}>
                 <Show when={watcherUsers().length}>
-                  <ViewerList>
+                  <ViewerList
+                    onClick={(e) => e.stopPropagation()}
+                    use:floating={{
+                      contextMenu: () => <ViewersMenu userIds={watchers()} />,
+                      contextMenuHandler: "click",
+                    }}
+                  >
                     <For each={watcherUsers().slice(0, 5)}>
                       {(watcher) => (
                         <ViewerAvatar>
@@ -368,6 +382,7 @@ const ViewerList = styled("div", {
     display: "flex",
     alignItems: "center",
     flexDirection: "row",
+    cursor: "pointer",
   },
 });
 

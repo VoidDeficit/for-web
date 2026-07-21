@@ -8,3 +8,5 @@ export { ServerSidebarContextMenu } from "./ServerSidebarContextMenu";
 export { ShareStreamMenu } from "./ShareStreamMenu";
 export { StreamStatsMenu } from "./StreamStatsMenu";
 export { UserContextMenu } from "./UserContextMenu";
+export { ViewersMenu } from "./ViewersMenu";
+export { WatchStreamMenu } from "./WatchStreamMenu";
