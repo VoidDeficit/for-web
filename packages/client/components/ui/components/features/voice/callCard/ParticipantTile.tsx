@@ -1,4 +1,4 @@
-import { createSignal, Show } from "solid-js";
+import { createMemo, createSignal, For, Show } from "solid-js";
 import {
   TrackReference,
   useEnsureParticipant,
@@ -8,15 +8,17 @@ import {
   VideoTrack,
 } from "solid-livekit-components";
 
-import { Track } from "livekit-client";
+import { RemoteTrackPublication, Track } from "livekit-client";
 import { cva } from "styled-system/css";
 import { styled } from "styled-system/jsx";
 
+import { useLingui } from "@lingui-solid/solid/macro";
+
 import { StreamStatsMenu, UserContextMenu } from "@revolt/app";
-import { useUser } from "@revolt/markdown/users";
+import { useUser, useUsers } from "@revolt/markdown/users";
 import { useVoice } from "@revolt/rtc";
 import { useState } from "@revolt/state";
-import { Avatar } from "@revolt/ui/components/design";
+import { Avatar, IconButton } from "@revolt/ui/components/design";
 import { Row } from "@revolt/ui/components/layout";
 import { OverflowingText } from "@revolt/ui/components/utils";
 import { Symbol } from "@revolt/ui/components/utils/Symbol";
@@ -36,6 +38,7 @@ export function ParticipantTile(props: TileProps) {
   const participant = useEnsureParticipant();
   const track = useTrackRefContext();
   const user = useUser(participant.identity);
+  const { t } = useLingui();
 
   let videoRef: HTMLVideoElement | undefined;
 
@@ -59,10 +62,17 @@ export function ParticipantTile(props: TileProps) {
     source: Track.Source.ScreenShare,
   });
 
+  // "Muted by viewer" only makes sense for other people's screen shares -
+  // for your own tile, show whether you've actually got screen share
+  // audio enabled (state.voice.screenShareAudio), not the per-viewer mute
+  // map, which otherwise defaults to "muted" for every user id that has no
+  // explicit entry yet - including your own.
   const isScreenShareAudioUserMuted = () =>
-    state.voice.getScreenShareMuted(user().user!.id)
-      ? "by-user"
-      : isScreenShareAudioMuted() || false;
+    participant.isLocal
+      ? !state.voice.screenShareAudio || isScreenShareAudioMuted() || false
+      : state.voice.getScreenShareMuted(user().user!.id)
+        ? "by-user"
+        : isScreenShareAudioMuted() || false;
 
   const isVideoMuted = useIsMuted({
     participant,
@@ -72,6 +82,25 @@ export function ParticipantTile(props: TileProps) {
   const isVideo = () => !isVideoMuted();
   const isScreenShare = () => track.source === Track.Source.ScreenShare;
   const isSpeaking = useIsSpeaking(participant);
+
+  // Screen shares from other people don't auto-play - like Discord, you
+  // have to explicitly click to watch, so people don't burn bandwidth on
+  // streams they've scrolled past. Your own share is always "watched".
+  const isRemoteScreenShare = () => isScreenShare() && !participant.isLocal;
+
+  const remotePublication = () =>
+    track.publication instanceof RemoteTrackPublication
+      ? track.publication
+      : undefined;
+
+  const isWatching = () =>
+    !isRemoteScreenShare() ||
+    voice.isWatchingTrack(track.publication?.trackSid ?? "");
+
+  const watchers = createMemo(() =>
+    isScreenShare() ? voice.getWatchers(track.publication?.trackSid ?? "") : [],
+  );
+  const watcherUsers = useUsers(() => watchers(), true);
 
   const getHeight = () => {
     if (!props.focus || videoDims().height == 0) return {};
@@ -94,7 +123,14 @@ export function ParticipantTile(props: TileProps) {
             ...props,
           }) + (isScreenShare() ? " vc_tile group" : " vc_tile")
         }
-        onClick={() => voice.toggleFocus(track)}
+        onClick={() => {
+          if (isRemoteScreenShare() && !isWatching()) {
+            const pub = remotePublication();
+            if (pub) voice.watchTrack(pub);
+            return;
+          }
+          voice.toggleFocus(track);
+        }}
         use:floating={{
           // TODO: Conflicts with focusing, maybe only show if clicking name itself
           //   userCard: {
@@ -116,16 +152,38 @@ export function ParticipantTile(props: TileProps) {
         style={{ ...getHeight() }}
       >
         <Show
-          when={isVideo() || isScreenShare()}
+          when={(isVideo() || isScreenShare()) && isWatching()}
           fallback={
-            <AvatarOnly>
-              <Avatar
-                src={user().avatar}
-                fallback={user().username}
-                size={48}
-                interactive={false}
-              />
-            </AvatarOnly>
+            <>
+              <AvatarOnly>
+                <Avatar
+                  src={user().avatar}
+                  fallback={user().username}
+                  size={48}
+                  interactive={false}
+                />
+              </AvatarOnly>
+              <Show when={isRemoteScreenShare() && !isWatching()}>
+                <WatchButtonHolder onClick={(e) => e.stopPropagation()}>
+                  <IconButton
+                    size="lg"
+                    variant="filled"
+                    onPress={() => {
+                      const pub = remotePublication();
+                      if (pub) voice.watchTrack(pub);
+                    }}
+                    use:floating={{
+                      tooltip: {
+                        placement: "top",
+                        content: t`Watch Stream`,
+                      },
+                    }}
+                  >
+                    <Symbol>play_arrow</Symbol>
+                  </IconButton>
+                </WatchButtonHolder>
+              </Show>
+            </>
           }
         >
           <VideoTrack
@@ -137,7 +195,7 @@ export function ParticipantTile(props: TileProps) {
               overflow: "hidden",
             }}
             trackRef={track as TrackReference}
-            manageSubscription={true}
+            manageSubscription={!isRemoteScreenShare()}
             ref={videoRef}
             on:resize={() => {
               setVideoDims({
@@ -151,6 +209,29 @@ export function ParticipantTile(props: TileProps) {
           <OverlayInner>
             <OverflowingText>{user().username}</OverflowingText>
             <Row gap="md">
+              <Show when={isScreenShare()}>
+                <Show when={watcherUsers().length}>
+                  <ViewerList>
+                    <For each={watcherUsers().slice(0, 5)}>
+                      {(watcher) => (
+                        <ViewerAvatar>
+                          <Avatar
+                            src={watcher?.avatar}
+                            fallback={watcher?.username ?? "?"}
+                            size={20}
+                            interactive={false}
+                          />
+                        </ViewerAvatar>
+                      )}
+                    </For>
+                    <Show when={watcherUsers().length > 5}>
+                      <OverflowingText>
+                        +{watcherUsers().length - 5}
+                      </OverflowingText>
+                    </Show>
+                  </ViewerList>
+                </Show>
+              </Show>
               {isScreenShare() ? (
                 <Show when={isScreenShareAudioUserMuted()}>
                   <Symbol
@@ -171,6 +252,26 @@ export function ParticipantTile(props: TileProps) {
                   camera={isVideo()}
                 />
               )}
+              <Show when={isRemoteScreenShare() && isWatching()}>
+                <div onClick={(e) => e.stopPropagation()}>
+                  <IconButton
+                    size="xs"
+                    variant="standard"
+                    onPress={() => {
+                      const pub = remotePublication();
+                      if (pub) voice.unwatchTrack(pub);
+                    }}
+                    use:floating={{
+                      tooltip: {
+                        placement: "top",
+                        content: t`Stop Watching`,
+                      },
+                    }}
+                  >
+                    <Symbol size={18}>close_fullscreen</Symbol>
+                  </IconButton>
+                </div>
+              </Show>
             </Row>
           </OverlayInner>
         </Overlay>
@@ -250,6 +351,34 @@ const AvatarOnly = styled("div", {
       width: "auto !important",
       height: "30% !important",
       minHeight: "48px",
+    },
+  },
+});
+
+const WatchButtonHolder = styled("div", {
+  base: {
+    gridArea: "1/1",
+    display: "grid",
+    placeItems: "center",
+  },
+});
+
+const ViewerList = styled("div", {
+  base: {
+    display: "flex",
+    alignItems: "center",
+    flexDirection: "row",
+  },
+});
+
+const ViewerAvatar = styled("div", {
+  base: {
+    marginInlineStart: "calc(var(--gap-sm) * -1)",
+    borderRadius: "var(--borderRadius-full)",
+    outline: "2px solid var(--md-sys-color-surface-container)",
+
+    _firstOfType: {
+      marginInlineStart: 0,
     },
   },
 });

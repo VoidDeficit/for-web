@@ -3004,6 +3004,10 @@ msgstr ""
 msgid "Stop Streaming"
 msgstr ""
 
+#: components/ui/components/features/voice/callCard/ParticipantTile.tsx
+msgid "Stop Watching"
+msgstr ""
+
 #: components/app/interface/settings/user/notifications/Sounds.tsx
 msgid "Stream End"
 msgstr ""
@@ -3477,6 +3481,10 @@ msgstr ""
 
 #: components/app/interface/settings/user/profile/UserProfileEditor.tsx
 msgid "Want to change username?"
+msgstr ""
+
+#: components/ui/components/features/voice/callCard/ParticipantTile.tsx
+msgid "Watch Stream"
 msgstr ""
 
 #: src/AndroidNag.tsx

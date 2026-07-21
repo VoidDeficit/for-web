@@ -14,7 +14,14 @@ import {
 } from "solid-livekit-components";
 
 import type { TrackPublishOptions } from "livekit-client";
-import { Room, Track, VideoEncoding, VideoResolution } from "livekit-client";
+import {
+  ParticipantEvent,
+  RemoteTrackPublication,
+  Room,
+  Track,
+  VideoEncoding,
+  VideoResolution,
+} from "livekit-client";
 import { Channel } from "stoat.js";
 
 import { SoundController, useClient, useSound } from "@revolt/client";
@@ -112,12 +119,29 @@ class Voice {
   showBar: Accessor<boolean>;
   #setShowBar: Setter<boolean>;
 
+  /** Screen share track SIDs the local user has explicitly chosen to watch. */
+  watchedTracks: Accessor<Set<string>>;
+  #setWatchedTracks: Setter<Set<string>>;
+
+  /**
+   * Bumped whenever any participant's attributes change (or on
+   * connect/participant join/leave), so getWatchers() reads stay reactive
+   * despite reading room.remoteParticipants/attributes directly rather than
+   * through signals.
+   */
+  #watcherVersion: Accessor<number>;
+  #bumpWatcherVersion: Setter<number>;
+
+  /** Attribute key prefix other clients broadcast on when watching a track, so we can list live viewers per stream. */
+  static WATCHING_ATTRIBUTE_PREFIX = "watching:";
+
   private sound: SoundController;
 
   private openModal;
   private getClient;
   private screenShareTracks: Set<string>;
   private micProcessor?: MicProcessor;
+  #onAttributesChanged = () => this.#bumpWatcherVersion((v) => v + 1);
   private cameraProcessor?: BackgroundProcessorWrapper;
 
   constructor(
@@ -164,6 +188,16 @@ class Voice {
     const [showBar, setShowBar] = createSignal(true);
     this.showBar = showBar;
     this.#setShowBar = setShowBar;
+
+    const [watchedTracks, setWatchedTracks] = createSignal<Set<string>>(
+      new Set(),
+    );
+    this.watchedTracks = watchedTracks;
+    this.#setWatchedTracks = setWatchedTracks;
+
+    const [watcherVersion, setWatcherVersion] = createSignal(0);
+    this.#watcherVersion = watcherVersion;
+    this.#bumpWatcherVersion = setWatcherVersion;
 
     this.openModal = modals.openModal;
 
@@ -227,17 +261,23 @@ class Voice {
         if (screenShareTrack) {
           this.screenShareTracks.add(screenShareTrack.trackSid);
         }
+
+        p.on(ParticipantEvent.AttributesChanged, this.#onAttributesChanged);
       }
+      this.#bumpWatcherVersion((v) => v + 1);
       this.sound.playSound("userJoinVoice");
     });
 
     room.addListener("disconnected", () => this.#setState("DISCONNECTED"));
 
-    room.addListener("participantConnected", () => {
+    room.addListener("participantConnected", (p) => {
+      p.on(ParticipantEvent.AttributesChanged, this.#onAttributesChanged);
+      this.#bumpWatcherVersion((v) => v + 1);
       this.sound.playSound("userJoinVoice");
     });
 
     room.addListener("participantDisconnected", () => {
+      this.#bumpWatcherVersion((v) => v + 1);
       this.sound.playSound("userLeaveVoice");
     });
 
@@ -297,6 +337,7 @@ class Voice {
         this.#setChannel();
         this.#setFullscreen(false);
         this.vidTracks = () => [];
+        this.#setWatchedTracks(new Set<string>());
       });
 
       this.screenShareTracks = new Set();
@@ -848,6 +889,68 @@ class Voice {
 
   isFocus(t: TrackReferenceOrPlaceholder) {
     return this.trackId(t) === this.focusId();
+  }
+
+  /**
+   * Start receiving media for a remote screen share the local user has
+   * explicitly chosen to watch, and broadcast that fact via participant
+   * attributes so other clients can show a live viewer list (LiveKit syncs
+   * attributes server-side, so this survives without any custom signalling).
+   */
+  watchTrack(publication: RemoteTrackPublication) {
+    publication.setSubscribed(true);
+    this.#setWatchedTracks((set) => new Set(set).add(publication.trackSid));
+
+    const room = this.room();
+    room?.localParticipant.setAttributes({
+      [`${Voice.WATCHING_ATTRIBUTE_PREFIX}${publication.trackSid}`]: "1",
+    });
+  }
+
+  unwatchTrack(publication: RemoteTrackPublication) {
+    publication.setSubscribed(false);
+    this.#setWatchedTracks((set) => {
+      const next = new Set(set);
+      next.delete(publication.trackSid);
+      return next;
+    });
+
+    const room = this.room();
+    room?.localParticipant.setAttributes({
+      [`${Voice.WATCHING_ATTRIBUTE_PREFIX}${publication.trackSid}`]: "",
+    });
+  }
+
+  isWatchingTrack(trackSid: string) {
+    return this.watchedTracks().has(trackSid);
+  }
+
+  /**
+   * Live list of user IDs currently watching a given screen share track,
+   * derived from every remote participant's synced attributes plus our own
+   * watch state (participants don't broadcast their own attributes back to
+   * themselves).
+   */
+  getWatchers(trackSid: string): string[] {
+    this.#watcherVersion();
+
+    const room = this.room();
+    if (!room) return [];
+
+    const key = `${Voice.WATCHING_ATTRIBUTE_PREFIX}${trackSid}`;
+    const watchers: string[] = [];
+
+    if (this.isWatchingTrack(trackSid)) {
+      watchers.push(room.localParticipant.identity);
+    }
+
+    for (const p of room.remoteParticipants.values()) {
+      if (p.attributes[key] === "1") {
+        watchers.push(p.identity);
+      }
+    }
+
+    return watchers;
   }
 
   focusTrack() {
